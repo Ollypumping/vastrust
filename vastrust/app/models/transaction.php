@@ -13,9 +13,9 @@ class Transaction {
 
     public function log($data) {
         $sql = "INSERT INTO transactions (
-                    from_account, to_account, type, amount, description, status
+                    sender_account, receiver_account, type, amount, description, status
                 ) VALUES (
-                    :from_account, :to_account, :type, :amount, :description, :status
+                    :sender_account, :receiver_account, :type, :amount, :description, :status
                 )";
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute($data);
@@ -23,7 +23,7 @@ class Transaction {
 
     public function getByAccount($account_number, $limit = 10, $offset = 0) {
         $sql = "SELECT * FROM transactions 
-                WHERE from_account = :account_number OR to_account = :account_number
+                WHERE sender_account = :account_number OR receiver_account = :account_number
                 ORDER BY created_at DESC
                 LIMIT :limit OFFSET :offset";
 
