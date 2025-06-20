@@ -14,11 +14,11 @@ class User {
     public function create($data) {
         $sql = "INSERT INTO users (
                     email, password, first_name, last_name, passport_photo, age, occupation, 
-                    address, phone_number, bvn, 
+                    address, phone_number, bvn, transaction_pin,
                     nok_first_name, nok_last_name, nok_phone_number, nok_address
                 ) VALUES (
                     :email, :password, :first_name, :last_name, :passport_photo, :age, :occupation, 
-                    :address, :phone_number, :bvn, 
+                    :address, :phone_number, :bvn, :transaction_pin,
                     :nok_first_name, :nok_last_name, :nok_phone_number, :nok_address
                 )";
 

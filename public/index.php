@@ -1,42 +1,36 @@
 <?php
-
-require_once _DIR_ . '/../vendor/autoload.php';
-
-use Dotenv\Dotenv;
-
 session_start();
 
-// Load environment variables
-$dotenv = Dotenv::createImmutable(_DIR_ . '/../');
-$dotenv->load();
-
-// Get current request method and URI
+// --- 1. Normalize Request URI ---
 $method = $_SERVER['REQUEST_METHOD'];
-$uri = strtok($_SERVER['REQUEST_URI'], '?'); // Strip query params
+$uri = strtok($_SERVER['REQUEST_URI'], '?'); // remove query string
+$uri = rtrim($uri, '/');
 
-$routeKey = "$method $uri";
+// --- 2. Set base path (adjust this if your folder is different) ---
+$basePath = '/vastrust/public';
 
-// Load routes
-$routes = require _DIR_ . '/../routes/api.php';
-
-// Route handling
-if (array_key_exists($routeKey, $routes)) {
-    $handler = $routes[$routeKey];
-
-    if (is_array($handler)) {
-        [$controllerClass, $method] = $handler;
-        $controller = new $controllerClass();
-        return $controller->$method();
-    }
-
-    if (is_callable($handler)) {
-        return $handler();
-    }
+// Remove the basePath from the URI so it works in subfolders
+if (strpos($uri, $basePath) === 0) {
+    $uri = substr($uri, strlen($basePath));
 }
 
-// If route not found
-http_response_code(404);
-echo json_encode([
-    'status' => 'error',
-    'message' => 'Route not found'
-]);
+// Prepend /api to unify routing logic (optional)
+$uri = '/api' . $uri;
+
+// Store back into $_SERVER for router to read
+$_SERVER['REQUEST_URI'] = $uri;
+$_SERVER['REQUEST_METHOD'] = $method;
+
+// --- 3. Manual Includes ---
+require_once '../config/database.php';
+
+require_once '../app/helpers/ResponseHelper.php';
+
+require_once '../app/controllers/AuthController.php';
+require_once '../app/controllers/AccountController.php';
+require_once '../app/controllers/TransactionController.php';
+require_once '../app/services/AuthService.php';
+
+
+
+require_once '../routes/api.php';

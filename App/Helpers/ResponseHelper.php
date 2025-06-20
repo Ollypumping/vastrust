@@ -1,7 +1,7 @@
 <?php
 namespace App\Helpers;
 
-class ResponseFormatter
+class ResponseHelper
 {
     public static function success($data = [], $message = "Success", $code = 200)
     {

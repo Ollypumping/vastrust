@@ -10,7 +10,7 @@ class RegisterValidator
         // Required text fields
         $requiredFields = [
             'email', 'password', 'first_name', 'last_name', 'age', 'occupation',
-            'address', 'phone_number', 'bvn',
+            'address', 'phone_number', 'bvn', 'transaction_pin',
             'nok_first_name', 'nok_last_name', 'nok_phone_number', 'nok_address'
         ];
 
@@ -38,8 +38,8 @@ class RegisterValidator
         // Phone numbers should be digits (optional length check)
         $phoneFields = ['phone_number', 'nok_phone_number'];
         foreach ($phoneFields as $phoneField) {
-            if (!empty($data[$phoneField]) && !preg_match('/^[0-9+\s\-()]{7,20}$/', $data[$phoneField])) {
-                $errors[$phoneField] = ucfirst(str_replace('_', ' ', $phoneField)) . ' is invalid.';
+            if (!empty($data[$phoneField]) && !preg_match('/^0\d{10}$/', $data[$phoneField])) {
+                $errors[$phoneField] = ucfirst(str_replace('_', ' ', $phoneField)) . ' must be an 11-digit number starting with 0.';
             }
         }
 
@@ -51,6 +51,10 @@ class RegisterValidator
             if (!in_array($file['type'], $allowedTypes)) {
                 $errors['passport_photo'] = 'Only JPG and PNG images are allowed.';
             }
+        }
+        // Pin checks
+        if (empty($data['transaction_pin']) || !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
+            $errors['transaction_pin'] = 'Transaction PIN must be a 4-digit number.';
         }
 
         return $errors;

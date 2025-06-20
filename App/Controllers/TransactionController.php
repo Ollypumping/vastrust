@@ -27,7 +27,7 @@ class TransactionController
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->service->withdraw($data['account_number'], $data['amount']);
+        $result = $this->service->withdraw($data['account_number'], $data['amount'], $data['pin']);
 
         return $result['success']
             ? ResponseHelper::success([], $result['message'])
@@ -43,7 +43,7 @@ class TransactionController
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->service->transfer($data['from_account'], $data['to_account'], $data['amount']);
+        $result = $this->service->transfer($data['from_account'], $data['to_account'], $data['amount'], $data['pin'], $data['external_bank'] ?? null);
 
         return $result['success']
             ? ResponseHelper::success([], $result['message'])

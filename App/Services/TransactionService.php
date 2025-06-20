@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\Account;
 use App\Models\Transaction;
 
@@ -11,12 +12,14 @@ class TransactionService
 
     public function __construct()
     {
+        $this->user = new User;
         $this->account = new Account();
         $this->transaction = new Transaction();
     }
 
-    public function withdraw($accountNumber, $amount)
+    public function withdraw($accountNumber, $amount, $pin)
     {
+        $user = $this->user->findById($_SESSION['user_id']);
         $account = $this->account->getByAccountNumber($accountNumber);
 
         if (!$account) {
@@ -25,6 +28,10 @@ class TransactionService
 
         if ($account['balance'] < $amount) {
             return ['success' => false, 'message' => 'Insufficient funds.'];
+        }
+
+        if(!$user || !password_verify($pin, $user['transaction_pin'])) {
+            return ['success' => false, 'message' => 'Invalid transaction PIN.'];
         }
 
         $newBalance = $account['balance'] - $amount;
@@ -42,40 +49,66 @@ class TransactionService
         return ['success' => true, 'message' => 'Withdrawal successful.'];
     }
 
-    public function transfer($from, $to, $amount)
+    public function transfer($from, $to, $amount, $externalBank = null, $pin)
     {
+        $user = $this->user->findById($_SESSION['user_id']);
+
+        if (!$user || !password_verify($pin, $user['transaction_pin'])) {
+            return ['success' => false, 'message' => 'Invalid transaction PIN.'];
+        }
+
+        $fromAccount = $this->account->getByAccountNumber($from);
+
+        if (!$fromAccount) {
+            return ['success' => false, 'message' => 'Sender account not found.'];
+        }
+
         if ($from === $to) {
             return ['success' => false, 'message' => 'Cannot transfer to the same account.'];
         }
 
-        $fromAccount = $this->account->getByAccountNumber($from);
-        $toAccount = $this->account->getByAccountNumber($to);
-
-        if (!$fromAccount || !$toAccount) {
-            return ['success' => false, 'message' => 'One or both accounts not found.'];
+        if ($fromAccount['balance'] < $amount) {
+            return ['success' => false, 'message' => 'Insufficient funds.'];
         }
 
-        if ($fromAccount['balance'] < $amount) {
-            return ['success' => false, 'message' => 'Insufficient funds in sender account.'];
+        // Check if it's interbank
+        $toAccount = $this->account->getByAccountNumber($to);
+        if (!$toAccount && !$externalBank) {
+            return ['success' => false, 'message' => 'Receiver account not found.'];
         }
 
         // Deduct from sender
         $this->account->updateBalance($from, $fromAccount['balance'] - $amount);
 
-        // Add to receiver
+        // Interbank: don't credit anyone
+        if (!$toAccount && $externalBank) {
+            $this->transaction->log([
+                'from_account' => $from,
+                'to_account' => null,
+                'type' => 'transfer',
+                'amount' => $amount,
+                'description' => 'Interbank transfer to ' . $externalBank,
+                'status' => 'success',
+                'external_bank' => $externalBank
+            ]);
+
+            return ['success' => true, 'message' => 'Interbank transfer initiated.'];
+        }
+
+        // Intra-bank: credit recipient
         $this->account->updateBalance($to, $toAccount['balance'] + $amount);
 
-        // Log transaction
         $this->transaction->log([
             'from_account' => $from,
             'to_account' => $to,
             'type' => 'transfer',
             'amount' => $amount,
             'description' => 'Intra-bank transfer',
-            'status' => 'success'
+            'status' => 'success',
+            'external_bank' => null
         ]);
 
-        return ['success' => true, 'message' => 'Transfer successful.'];
+        return ['success' => true, 'message' => 'Intra-bank transfer completed.'];
     }
 
     public function deposit($accountNumber, $amount)

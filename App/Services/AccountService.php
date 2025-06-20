@@ -15,10 +15,10 @@ class AccountService
 
     public function create($userId, $accountType = 'savings')
     {
-        // Generate a unique 10-digit account number
+        // To generate a unique 10-digit account number
         $accountNumber = AccountNumberGenerator::generate();
 
-        // Check uniqueness in the DB
+        // To check uniqueness in the DB
         while ($this->account->getByAccountNumber($accountNumber)) {
             $accountNumber = AccountNumberGenerator::generate();
         }

@@ -22,6 +22,7 @@ class AuthService
         }
 
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        $data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
 
         $uploadPath = 'storage/uploads/';
         $filename = uniqid('passport_') . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
@@ -47,6 +48,7 @@ class AuthService
             'address' => $data['address'],
             'phone_number' => $data['phone_number'],
             'bvn' => $data['bvn'],
+            'transaction_pin' => $data['transaction_pin'],
             'nok_first_name' => $data['nok_first_name'],
             'nok_last_name' => $data['nok_last_name'],
             'nok_phone_number' => $data['nok_phone_number'],
