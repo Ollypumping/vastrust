@@ -6,6 +6,21 @@ use App\Helpers\ResponseHelper;
 
 class AuthMiddleware
 {
+    public function __construct()
+    {
+        $publicRoutes = [
+            '/api/register',
+            '/api/reset-password'
+        ];
+
+        $uri = $_SERVER['REQUEST_URI'];
+        $uri = strtok($uri, '?'); // remove query params
+
+        if (!in_array($uri, $publicRoutes)) {
+            self::check();
+        }
+    }
+
     public static function check()
     {
         if (!isset($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW'])) {
@@ -24,7 +39,7 @@ class AuthMiddleware
             exit;
         }
 
-        // Attach user ID for use in controller
+        // Attach user ID for use in controllers
         $_SESSION['user_id'] = $user['id'];
     }
 

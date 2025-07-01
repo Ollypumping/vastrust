@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Services\BeneficiaryService;
 
 class TransactionService
 {
@@ -80,6 +81,16 @@ class TransactionService
         // Deduct from sender
         $this->account->updateBalance($from, $fromAccount['balance'] - $amount);
 
+        //Add to beneficiary
+        if(!$toAccount && $externalBank) {
+            (new BeneficiaryService())->saveBeneficiary(
+                $_SESSION['user_id'], $to, 'External Beneficiary', $externalBank);
+        }
+        else if ($toAccount) {
+            (new BeneficiaryService())->saveBeneficiary(
+                $_SESSION['user_id'], $to, $toAccount['account_name']);
+        }
+
         // Interbank: don't credit anyone
         if (!$toAccount && $externalBank) {
             $this->transaction->log([
@@ -109,6 +120,7 @@ class TransactionService
         ]);
 
         return ['success' => true, 'message' => 'Intra-bank transfer completed.'];
+
     }
 
     public function deposit($accountNumber, $amount)

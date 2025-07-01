@@ -1,29 +1,44 @@
 <?php
 
 use App\Controllers\AuthController;
+use App\Controllers\RegController;
 use App\Controllers\AccountController;
 use App\Controllers\TransactionController;
+use App\Controllers\BeneficiaryController;
+use App\Middlewares\AuthMiddleware;
 use App\Helpers\ResponseHelper;
-
-// Instantiate controllers once
-$authController = new AuthController();
-$accountController = new AccountController();
-$transactionController = new TransactionController();
 
 $requestUri = rtrim(strtok($_SERVER['REQUEST_URI'], '?'), '/');
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 $routeKey = "$requestMethod $requestUri";
 
+// PUBLIC ROUTES
+$regController = new RegController();
 switch ($routeKey) {
-    // Authentication
     case 'POST /api/register':
-        $authController->register();
-        break;
+        $regController->register();
+        return;
 
+    case 'POST /api/reset-password':
+        $regController->resetPassword();
+        return;
+
+}
+
+// ⛔ All routes below require authentication
+new AuthMiddleware();
+
+// PROTECTED CONTROLLERS
+$authController = new AuthController();
+$accountController = new AccountController();
+$transactionController = new TransactionController();
+$beneficiaryController = new BeneficiaryController(); 
+
+// PROTECTED ROUTES
+switch ($routeKey) {
     case 'POST /api/login':
         $authController->login();
-        break;
-
+        return;
     case 'GET /api/profile':
         $authController->profile($_SESSION['user_id'] ?? null);
         break;
@@ -32,11 +47,6 @@ switch ($routeKey) {
         $authController->changePassword($_SESSION['user_id'] ?? null);
         break;
 
-    case 'POST /api/reset-password':
-        $authController->resetPassword();
-        break;
-
-    // Account
     case 'POST /api/create-account':
         $accountController->create($_SESSION['user_id'] ?? null);
         break;
@@ -50,10 +60,10 @@ switch ($routeKey) {
         $accountController->getAllBalances($_SESSION['user_id'] ?? null);
         break;
 
-    // Transactions
     case 'POST /api/deposit':
         $transactionController->deposit();
         break;
+
     case 'POST /api/withdraw':
         $transactionController->withdraw();
         break;
@@ -62,10 +72,20 @@ switch ($routeKey) {
         $transactionController->transfer();
         break;
 
+    case 'GET /api/beneficiaries':
+        $beneficiaryController->list($_SESSION['user_id'] ?? null);
+        break;
+
+    case 'DELETE /api/beneficiary':
+        $id = $_GET['id'] ?? null;
+        $beneficiaryController->delete($id);
+        break;
+
+
     case 'GET /api/transactions':
         $account = $_GET['account'] ?? '';
         $page = $_GET['page'] ?? 1;
-        $transactionController->getTransactionHistory($account, $page);
+        $transactionController->list($account, $page);
         break;
 
     default:

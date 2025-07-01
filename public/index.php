@@ -31,6 +31,7 @@ $_SERVER['REQUEST_METHOD'] = $method;
 
 // --- 3. Manual Includes ---
 require_once '../config/database.php';
+require_once __DIR__ . '/../autoload.php';
 
 require_once '../app/helpers/ResponseHelper.php';
 
