@@ -44,12 +44,10 @@ class RegisterValidator
         }
 
         // Passport photo checks
-        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
-            $errors['passport_photo'] = 'Passport photo is required.';
-        } else {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-            if (!in_array($file['type'], $allowedTypes)) {
-                $errors['passport_photo'] = 'Only JPG and PNG images are allowed.';
+        if (!empty($files['passport_photo']['name'])) {
+            $allowed = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!in_array($files['passport_photo']['type'], $allowed)) {
+                $errors['passport_photo'] = 'Invalid image type.';
             }
         }
         // Pin checks

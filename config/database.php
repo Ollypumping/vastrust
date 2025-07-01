@@ -5,7 +5,7 @@ class Database {
     public static function connect() {
         if (!self::$conn) {
             self::$conn = new PDO(
-                "mysql:host=localhost;dbname=corebanking;charset=utf8mb4", 
+                "mysql:host=localhost;dbname=vastrust;charset=utf8mb4", 
                 "root", 
                 ""
             );

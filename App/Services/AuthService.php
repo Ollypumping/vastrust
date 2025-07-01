@@ -24,18 +24,15 @@ class AuthService
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
         $data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
 
-        $uploadPath = 'storage/uploads/';
-        $filename = uniqid('passport_') . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-        $destination = $uploadPath . $filename;
+        $photoName = null;
 
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            return [
-                'success' => false,
-                'message' => 'Failed to upload passport photo.'
-            ];
+        if (!empty($files['passport_photo']['name'])) {
+            $photoName = time() . '_' . $files['passport_photo']['name'];
+            $targetPath = _DIR_ . '/../../storage/uploads/' . $photoName;
+            move_uploaded_file($files['passport_photo']['tmp_name'], $targetPath);
         }
 
-        $data['passport_photo'] = $destination;
+        $data['passport_photo'] = $photoName;
 
         $success = $this->user->create([
             'email' => $data['email'],

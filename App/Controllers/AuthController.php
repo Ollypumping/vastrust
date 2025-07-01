@@ -18,26 +18,7 @@ class AuthController
         AuthMiddleware::check();
     }
 
-    public function register()
-    {
-        $data = $_POST;
-        $file = $_FILES['passport_photo'] ?? null;
 
-        $validator = new RegisterValidator();
-        $errors = $validator->validate($data, $file);
-
-        if (!empty($errors)) {
-            return ResponseHelper::error($errors, "Validation failed", 422);
-        }
-
-        $result = $this->authService->register($data, $file);
-
-        if ($result['success']) {
-            return ResponseHelper::success($result['data'], $result['message'], 201);
-        }
-
-        return ResponseHelper::error([], $result['message']);
-    }
 
     public function login()
     {
