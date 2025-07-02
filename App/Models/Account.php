@@ -1,7 +1,7 @@
 <?php
 namespace App\Models;
 
-use Database;
+use config\Database;
 use PDO;
 
 class Account {

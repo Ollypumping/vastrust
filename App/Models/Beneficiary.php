@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-use App\config\database;
+use config\database;
 
 class Beneficiary
 {
