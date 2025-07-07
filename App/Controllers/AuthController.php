@@ -20,24 +20,6 @@ class AuthController
 
 
 
-    public function login()
-    {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $validator = new LoginValidator();
-        $errors = $validator->validate($data);
-
-        if (!empty($errors)) {
-            return ResponseHelper::error($errors, "Validation failed", 422);
-        }
-
-        $result = $this->authService->login($data['email'], $data['password']);
-
-        if ($result['success']) {
-            return ResponseHelper::success($result['data'], $result['message']);
-        }
-
-        return ResponseHelper::error([], $result['message'], 401);
-    }
 
     public function profile($userId)
     {

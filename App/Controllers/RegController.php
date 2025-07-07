@@ -3,18 +3,21 @@
 namespace App\Controllers;
 
 use App\Services\AuthService;
+use App\Validators\LoginValidator;
 use App\Validators\RegisterValidator;
 use App\Helpers\ResponseHelper;
 
 class RegController
 {
     private $service;
-    private $validator;
+    private $rvalidator;
+    private $lvalidator;
 
     public function __construct()
     {
         $this->service = new AuthService();
-        $this->validator = new RegisterValidator();
+        $this->rvalidator = new RegisterValidator();
+        $this->lvalidator = new LoginValidator();
     }
 
     public function register()
@@ -22,7 +25,7 @@ class RegController
         $data = $_POST;
         $files = $_FILES;
 
-        $errors = $this->validator->validate($data, $files);
+        $errors = $this->rvalidator->validate($data, $files);
         if (!empty($errors)) {
             return ResponseHelper::error($errors, 'Validation failed');
         }
@@ -31,10 +34,24 @@ class RegController
         return ResponseHelper::success($result, 'Registration successful', 201);
     }
 
-    // public function login()
-    // {
-    //     return ResponseHelper::success([], 'Login successful (handled via Basic Auth)');
-    // }
+   public function login()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        //$validator = new LoginValidator();
+        $errors = $this->lvalidator->validate($data);
+
+        if (!empty($errors)) {
+            return ResponseHelper::error($errors, "Validation failed", 422);
+        }
+
+        $result = $this->service->login($data['email'], $data['password']);
+
+        if ($result['success']) {
+            return ResponseHelper::success($result['data'], $result['message']);
+        }
+
+        return ResponseHelper::error([], $result['message'], 401);
+    }
 
     public function resetPassword()
     {

@@ -23,9 +23,13 @@ switch ($routeKey) {
         $regController->resetPassword();
         return;
 
+    case 'POST /api/login':
+        $regController->login();
+        return;
+
 }
 
-// ⛔ All routes below require authentication
+
 new AuthMiddleware();
 
 // PROTECTED CONTROLLERS
@@ -36,9 +40,6 @@ $beneficiaryController = new BeneficiaryController();
 
 // PROTECTED ROUTES
 switch ($routeKey) {
-    case 'POST /api/login':
-        $authController->login();
-        return;
     case 'GET /api/profile':
         $authController->profile($_SESSION['user_id'] ?? null);
         break;
