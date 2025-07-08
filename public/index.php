@@ -55,6 +55,4 @@ $publicRoutes = array_map(function($route) {
     '/api/reset-password'
 ]);
 
-if (!in_array($uri, $publicRoutes)) {
-    self::check();
-}
+
