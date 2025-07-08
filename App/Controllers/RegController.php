@@ -31,7 +31,11 @@ class RegController
         }
 
         $result = $this->service->register($data, $files);
-        return ResponseHelper::success($result, 'Registration successful', 201);
+        if (!$result['success']) {
+            return ResponseHelper::error([], $result['message'], 400);
+        }
+
+        return ResponseHelper::success($result['data'], 'Registration successful', 201);
     }
 
    public function login()

@@ -2,19 +2,12 @@
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-global $publicRoutes;
 session_start();
 
 // --- 1. Normalize Request URI ---
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = strtok($_SERVER['REQUEST_URI'], '?'); // remove query string
 $uri = rtrim($uri, '/');
-if ($uri === '') $uri = '/';
 
 // --- 2. Set base path (adjust this if your folder is different) ---
 $basePath = '/vastrust/public';
@@ -25,9 +18,7 @@ if (strpos($uri, $basePath) === 0) {
 }
 
 // Prepend /api to unify routing logic (optional)
-if (strpos($uri, '/api') !== 0) {
-    $uri = '/api' . $uri;
-}
+$uri = '/api' . $uri;
 
 // Store back into $_SERVER for router to read
 $_SERVER['REQUEST_URI'] = $uri;
@@ -47,14 +38,3 @@ require_once '../app/services/AuthService.php';
 
 
 require_once '../routes/api.php';
-
-$publicRoutes = array_map(function($route) {
-    return rtrim($route, '/');
-}, [
-    '/api/register',
-    '/api/reset-password'
-]);
-
-if (!in_array($uri, $publicRoutes)) {
-    self::check();
-}

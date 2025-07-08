@@ -6,13 +6,14 @@ use App\Services\TransactionService;
 use App\Validators\TransactionValidator;
 use App\Helpers\ResponseHelper;
 
-class TransactionController
+class TransactionController extends AuthMiddleware
 {
     private $service;
     private $validator;
 
     public function __construct()
     {
+        parent::__construct(); 
         $this->service = new TransactionService();
         $this->validator = new TransactionValidator();
         AuthMiddleware::check();

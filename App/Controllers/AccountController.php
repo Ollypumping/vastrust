@@ -6,16 +6,17 @@ use App\Services\AccountService;
 use App\Validators\AccountValidator;
 use App\Helpers\ResponseHelper;
 
-class AccountController
+class AccountController extends AuthMiddleware
 {
     private $service;
     private $validator;
 
     public function __construct()
     {
+        parent::__construct();
         $this->service = new AccountService();
         $this->validator = new AccountValidator();
-        AuthMiddleware::check();
+       
     }
 
     public function create($userId)

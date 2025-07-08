@@ -1,40 +1,39 @@
 <?php
 namespace App\Models;
 
+use App\Core\Model;
 use config\Database;
 use PDO;
 
-class Account {
-    private $conn;
-
-    public function __construct() {
-        $this->conn = Database::connect();
-    }
+class Account extends Model {
 
     public function create($data) {
         $sql = "INSERT INTO accounts (user_id, account_number, balance, account_type)
                 VALUES (:user_id, :account_number, :balance, :account_type)";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute($data);
+        return $this->execute($sql, $data);
     }
 
     public function getByUserId($user_id) {
-        $stmt = $this->conn->prepare("SELECT * FROM accounts WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $user_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM accounts WHERE user_id = :user_id";
+        return $this->query($sql, ['user_id' => $user_id]);
     }
 
     public function getByAccountNumber($account_number) {
-        $stmt = $this->conn->prepare("SELECT * FROM accounts WHERE account_number = :account_number");
-        $stmt->execute(['account_number' => $account_number]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM accounts WHERE account_number = :account_number";
+        return $this->query($sql, ['account_number' => $account_number], true);
     }
 
     public function updateBalance($account_number, $new_balance) {
-        $stmt = $this->conn->prepare("UPDATE accounts SET balance = :balance WHERE account_number = :account_number");
-        return $stmt->execute([
+        $sql = "UPDATE accounts SET balance = :balance WHERE account_number = :account_number";
+        return $this->execute($sql, [
             'balance' => $new_balance,
             'account_number' => $account_number
         ]);
+    }
+
+    public function getBalance($account_number) {
+        $sql = "SELECT balance FROM accounts WHERE account_number = :account_number";
+        $result = $this->query($sql, ['account_number' => $account_number], true);
+        return $result ? $result['balance'] : false;
     }
 }
