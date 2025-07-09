@@ -45,7 +45,7 @@ class TransactionValidator
 
         //Validate if it an inter bank transfer
         if(!empty($data['external_bank'])){
-            $validBanks = BankHelper::getValidBanks();
+            $validBanks = BankHelper::getBanks();
             if (!in_array($data['external_bank'], $validBanks)) {
                 $errors['external_bank'] = 'Invalid bank name.';
             }
