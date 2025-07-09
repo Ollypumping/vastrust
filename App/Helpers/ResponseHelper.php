@@ -16,10 +16,16 @@ class ResponseHelper
     public static function error($errors = [], $message = "An error occurred", $code = 400)
     {
         http_response_code($code);
-        echo json_encode([
+        $response = [
             'status' => 'error',
             'message' => $message,
-            'errors' => $errors
-        ]);
+        ];
+
+        if (!empty($errors)) {
+            $response['errors'] = $errors;
+        }
+
+        echo json_encode($response);
+        exit;
     }
 }

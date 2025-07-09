@@ -1,15 +1,12 @@
 <?php
 namespace App\Models;
 
+use App\Core\Model;
 use config\Database;
 use PDO;
 
-class Transaction {
-    private $conn;
+class Transaction extends Model {
 
-    public function __construct() {
-        $this->conn = Database::connect();
-    }
 
     public function log($data) {
         $sql = "INSERT INTO transactions (
@@ -17,8 +14,7 @@ class Transaction {
                 ) VALUES (
                     :sender_account, :receiver_account, :type, :amount, :description, :status
                 )";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute($data);
+        return $this->execute($sql, $data);
     }
 
     public function getByAccount($account_number, $limit = 10, $offset = 0) {

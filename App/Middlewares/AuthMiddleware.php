@@ -19,6 +19,10 @@ class AuthMiddleware
         if (!in_array($uri, $publicRoutes)) {
             self::check();
         }
+
+        $this->check();
+
+
     }
 
     public static function check()
@@ -39,7 +43,7 @@ class AuthMiddleware
             exit;
         }
 
-        // Attach user ID for use in controllers
+        
         $_SESSION['user_id'] = $user['id'];
     }
 

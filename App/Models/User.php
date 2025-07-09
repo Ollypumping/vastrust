@@ -1,15 +1,11 @@
 <?php
 namespace App\Models;
 
+use App\Core\Model;
 use config\database;
 use PDO;
 
-class User {
-    private $conn;
-
-    public function __construct() {
-        $this->conn = Database::connect();
-    }
+class User extends Model {
 
     public function create($data) {
         $sql = "INSERT INTO users (
@@ -22,19 +18,20 @@ class User {
                     :nok_first_name, :nok_last_name, :nok_phone_number, :nok_address
                 )";
 
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute($data);
+        return $this->execute($sql, $data);
     }
 
     public function findByEmail($email) {
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE email = :email");
-        $stmt->execute(['email' => $email]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM users WHERE email = :email";
+        return $this->query($sql, ['email' => $email], true);
     }
 
     public function findById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = :id");
-        $stmt->execute(['id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM users WHERE id = :id";
+        return $this->query($sql, ['id' => $id], true);
+    }
+
+    public function getLastInsertId(){
+        return $this->conn->lastInsertId();  // PDO built-in
     }
 }

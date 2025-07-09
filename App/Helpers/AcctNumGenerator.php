@@ -1,7 +1,7 @@
 <?php
 namespace App\Helpers;
 
-class AccountNumberGenerator
+class AcctNumGenerator
 {
     public static function generate()
     {

@@ -8,14 +8,14 @@ use App\Validators\LoginValidator;
 use App\Validators\PasswordValidator;
 use App\Helpers\ResponseHelper;
 
-class AuthController
+class AuthController extends AuthMiddleware
 {
     private $authService;
 
     public function __construct()
     {
+        parent::__construct();
         $this->authService = new AuthService();
-        AuthMiddleware::check();
     }
 
 

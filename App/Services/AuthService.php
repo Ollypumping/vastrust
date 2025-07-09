@@ -1,15 +1,19 @@
 <?php
 namespace App\Services;
 
+use App\Core\Model;
+use App\Services\AccountService;
 use App\Models\User;
 
 class AuthService
 {
     private $user;
+    private $accountService;
 
     public function __construct()
     {
         $this->user = new User();
+        $this->accountService = new AccountService();
     }
 
     public function register($data, $file)
@@ -34,7 +38,7 @@ class AuthService
 
         $data['passport_photo'] = $photoName;
 
-        $success = $this->user->create([
+        $userCreated = $this->user->create([
             'email' => $data['email'],
             'password' => $data['password'],
             'first_name' => $data['first_name'],
@@ -51,10 +55,23 @@ class AuthService
             'nok_phone_number' => $data['nok_phone_number'],
             'nok_address' => $data['nok_address']
         ]);
+        if (!$userCreated) {
+            return [
+                'success' => false,
+                'message' => 'User registration failed.'
+            ];
+        }
+        $userId = $this->user->getLastInsertId();
+        $account = $this->accountService->create($userId, $data['account_type'] ?? 'savings');
 
-        return $success
-            ? ['success' => true, 'message' => 'User registered successfully.', 'data' => ['email' => $data['email']]]
-            : ['success' => false, 'message' => 'User registration failed.'];
+        return [
+            'success' => true,
+            'message' => 'User registered successfully.',
+            'data' => [
+                'email' => $data['email'],
+                'account' => $account
+            ]
+        ];
     }
 
     public function login($email, $password)
