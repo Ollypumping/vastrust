@@ -57,6 +57,11 @@ switch ($routeKey) {
         $accountController->getBalance($accountNumber);
         break;
 
+    case 'GET /api/balance':
+        $accountNumber = $_GET['account_number'] ?? '';
+        $accountController->getBalance($accountNumber);
+        break;
+
     case 'GET /api/balances':
         $accountController->getAllBalances($_SESSION['user_id'] ?? null);
         break;
@@ -86,7 +91,7 @@ switch ($routeKey) {
     case 'GET /api/transactions':
         $account = $_GET['account'] ?? '';
         $page = $_GET['page'] ?? 1;
-        $transactionController->list($account, $page);
+        $transactionController->getHistory($account, $page);
         break;
 
     default:

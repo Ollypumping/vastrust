@@ -43,17 +43,18 @@ class AuthService
             'password' => $data['password'],
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'account_number' => $data['account_number'] ?? null,
             'passport_photo' => $data['passport_photo'],
             'age' => $data['age'],
             'occupation' => $data['occupation'],
             'address' => $data['address'],
             'phone_number' => $data['phone_number'],
             'bvn' => $data['bvn'],
-            'transaction_pin' => $data['transaction_pin'],
-            'nok_first_name' => $data['nok_first_name'],
-            'nok_last_name' => $data['nok_last_name'],
-            'nok_phone_number' => $data['nok_phone_number'],
-            'nok_address' => $data['nok_address']
+            'transaction_pin' => $data['transaction_pin']
+            // 'nok_first_name' => $data['nok_first_name'],
+            // 'nok_last_name' => $data['nok_last_name'],
+            // 'nok_phone_number' => $data['nok_phone_number'],
+            // 'nok_address' => $data['nok_address']
         ]);
         if (!$userCreated) {
             return [
@@ -63,6 +64,9 @@ class AuthService
         }
         $userId = $this->user->getLastInsertId();
         $account = $this->accountService->create($userId, $data['account_type'] ?? 'savings');
+        if ($account['success']) {
+            $this->user->updateAccountNumber($userId, $account['data']['account_number']);
+        }
 
         return [
             'success' => true,
