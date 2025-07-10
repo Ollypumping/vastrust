@@ -6,6 +6,8 @@ use App\Services\AuthService;
 use App\Validators\LoginValidator;
 use App\Validators\RegisterValidator;
 use App\Helpers\ResponseHelper;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 class RegController
 {
@@ -41,7 +43,6 @@ class RegController
    public function login()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        //$validator = new LoginValidator();
         $errors = $this->lvalidator->validate($data);
 
         if (!empty($errors)) {
@@ -51,7 +52,19 @@ class RegController
         $result = $this->service->login($data['email'], $data['password']);
 
         if ($result['success']) {
-            return ResponseHelper::success($result['data'], $result['message']);
+            // Generate JWT
+            $env = parse_ini_file(__DIR__ . '/../../.env');
+            $secret = $env['JWT_SECRET'];
+            $payload = [
+                'user_id' => $result['data']['user_id'],
+                'email' => $result['data']['email'],
+                'exp' => time() + 60*60*24 // 1 day
+            ];
+            $jwt = JWT::encode($payload, $secret, 'HS256');
+            return ResponseHelper::success([
+                'token' => $jwt,
+                'user' => $result['data']
+            ], $result['message']);
         }
 
         return ResponseHelper::error([], $result['message'], 401);

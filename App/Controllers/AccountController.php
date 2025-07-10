@@ -1,19 +1,18 @@
 <?php
 namespace App\Controllers;
 
-use App\Middlewares\AuthMiddleware;
+use App\Middlewares\JwtMiddleware;
 use App\Services\AccountService;
 use App\Validators\AccountValidator;
 use App\Helpers\ResponseHelper;
 
-class AccountController extends AuthMiddleware
+class AccountController 
 {
     private $service;
     private $validator;
 
     public function __construct()
     {
-        parent::__construct();
         $this->service = new AccountService();
         $this->validator = new AccountValidator();
        
@@ -21,6 +20,7 @@ class AccountController extends AuthMiddleware
 
     public function create($userId)
     {
+        JwtMiddleware::check();
         $data = json_decode(file_get_contents("php://input"), true);
         $errors = $this->validator->validateCreate($data);
 
@@ -37,6 +37,7 @@ class AccountController extends AuthMiddleware
 
     public function getBalance($accountNumber)
     {
+        JwtMiddleware::check();
         $balance = $this->service->getBalance($accountNumber);
 
         return $balance !== false
@@ -46,6 +47,7 @@ class AccountController extends AuthMiddleware
 
     public function getAllBalances($userId)
     {
+        JwtMiddleware::check();
         $accounts = $this->service->getAllUserAccounts($userId);
 
         return ResponseHelper::success(['accounts' => $accounts], 'All account balances retrieved');

@@ -26,8 +26,9 @@ if (strpos($uri, $basePath) === 0) {
 }
 
 // Prepend /api to unify routing logic (optional)
-$uri = '/api' . $uri;
-
+if (strpos($uri, '/api') !== 0) {
+    $uri = '/api' . $uri;
+}
 // Store back into $_SERVER for router to read
 $_SERVER['REQUEST_URI'] = $uri;
 $_SERVER['REQUEST_METHOD'] = $method;
@@ -46,3 +47,6 @@ require_once '../app/services/AuthService.php';
 
 
 require_once '../routes/api.php';
+
+//installed for jwt
+//composer require firebase/php-jwt

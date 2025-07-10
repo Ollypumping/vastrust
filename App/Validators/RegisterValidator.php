@@ -9,8 +9,8 @@ class RegisterValidator
 
         // Required text fields
         $requiredFields = [
-            'email', 'password', 'first_name', 'last_name', 'age', 'occupation',
-            'address', 'phone_number', 'bvn', 'transaction_pin'
+            'email', 'password', 'first_name', 'last_name', 'age',
+            'address', 'phone_number', 'bvn'
             
         ];
 
@@ -51,10 +51,9 @@ class RegisterValidator
         //     }
         // }
         // Pin checks
-        if (empty($data['transaction_pin']) || !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
+        if (!empty($data['transaction_pin']) && !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
             $errors['transaction_pin'] = 'Transaction PIN must be a 4-digit number.';
         }
-
         return $errors;
     }
 }

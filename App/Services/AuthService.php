@@ -25,19 +25,28 @@ class AuthService
             ];
         }
 
+        // Hash password
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        $data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
 
+        // Handle optional transaction PIN
+        $data['transaction_pin'] = !empty($data['transaction_pin'])
+            ? password_hash($data['transaction_pin'], PASSWORD_DEFAULT)
+            : null;
+
+        // Handle optional occupation
+        $data['occupation'] = $data['occupation'] ?? null;
+
+        // Handle passport photo upload
         $photoName = null;
-
-        if (!empty($files['passport_photo']['name'])) {
-            $photoName = time() . '_' . $files['passport_photo']['name'];
-            $targetPath = _DIR_ . '/../../storage/uploads/' . $photoName;
-            move_uploaded_file($files['passport_photo']['tmp_name'], $targetPath);
+        if (!empty($file['passport_photo']['name'])) {
+            $photoName = time() . '_' . $file['passport_photo']['name'];
+            $targetPath = __DIR__ . '/../../storage/uploads/' . $photoName;
+            move_uploaded_file($file['passport_photo']['tmp_name'], $targetPath);
         }
 
         $data['passport_photo'] = $photoName;
 
+        // Create user
         $userCreated = $this->user->create([
             'email' => $data['email'],
             'password' => $data['password'],
@@ -51,19 +60,19 @@ class AuthService
             'phone_number' => $data['phone_number'],
             'bvn' => $data['bvn'],
             'transaction_pin' => $data['transaction_pin']
-            // 'nok_first_name' => $data['nok_first_name'],
-            // 'nok_last_name' => $data['nok_last_name'],
-            // 'nok_phone_number' => $data['nok_phone_number'],
-            // 'nok_address' => $data['nok_address']
         ]);
+
         if (!$userCreated) {
             return [
                 'success' => false,
                 'message' => 'User registration failed.'
             ];
         }
+
+        // Create account
         $userId = $this->user->getLastInsertId();
         $account = $this->accountService->create($userId, $data['account_type'] ?? 'savings');
+
         if ($account['success']) {
             $this->user->updateAccountNumber($userId, $account['data']['account_number']);
         }
@@ -77,6 +86,7 @@ class AuthService
             ]
         ];
     }
+
 
     public function login($email, $password)
     {

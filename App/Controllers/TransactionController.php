@@ -1,26 +1,25 @@
 <?php
 namespace App\Controllers;
 
-use App\Middlewares\AuthMiddleware;
+use App\Middlewares\JwtMiddleware;
 use App\Services\TransactionService;
 use App\Validators\TransactionValidator;
 use App\Helpers\ResponseHelper;
 
-class TransactionController extends AuthMiddleware
+class TransactionController
 {
     private $service;
     private $validator;
 
     public function __construct()
     {
-        parent::__construct(); 
         $this->service = new TransactionService();
         $this->validator = new TransactionValidator();
-        AuthMiddleware::check();
     }
 
     public function withdraw()
     {
+        JwtMiddleware::check();
         $data = json_decode(file_get_contents("php://input"), true);
         $errors = $this->validator->validateWithdraw($data);
 
@@ -37,6 +36,7 @@ class TransactionController extends AuthMiddleware
 
     public function transfer()
     {
+        JwtMiddleware::check();
         $data = json_decode(file_get_contents("php://input"), true);
         $errors = $this->validator->validateTransfer($data);
 
@@ -53,6 +53,7 @@ class TransactionController extends AuthMiddleware
 
     public function getHistory($accountNumber, $page = 1)
     {
+        JwtMiddleware::check();
         $result = $this->service->getTransactionHistory($accountNumber, $page);
         return ResponseHelper::success($result, 'Transaction history fetched');
     }
