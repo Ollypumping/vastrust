@@ -1,0 +1,2 @@
+.env
+vendor/phpmailer/phpmailer/src/PHPMailer.php

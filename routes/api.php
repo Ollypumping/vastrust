@@ -65,41 +65,49 @@ if (preg_match('#^/api/beneficiaries/(\d+)$#', $requestUri, $matches) && $reques
     return;
 }
 
-// OTHER PROTECTED ROUTES (query parameters only)
-
-if ($routeKey === 'GET /api/balance') {
-    $accountNumber = $_GET['account_number'] ?? '';
-    $accountController->getBalance($accountNumber);
+if (preg_match('#^/api/deposit/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $transactionController->deposit($matches[1]);
     return;
 }
 
-if ($routeKey === 'POST /api/deposit') {
-    $transactionController->deposit();
+if (preg_match('#^/api/withdraw/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $transactionController->withdraw($matches[1]);
     return;
 }
 
-if ($routeKey === 'POST /api/withdraw') {
-    $transactionController->withdraw();
+if (preg_match('#^/api/transfer/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $transactionController->transfer($matches[1]);
     return;
 }
 
-if ($routeKey === 'POST /api/transfer') {
-    $transactionController->transfer();
-    return;
-}
-
-if ($routeKey === 'DELETE /api/beneficiary') {
-    $id = $_GET['id'] ?? null;
-    $beneficiaryController->delete($id);
-    return;
-}
-
-if ($routeKey === 'GET /api/transactions') {
-    $account = $_GET['account'] ?? '';
+if (preg_match('#^/api/transactions/(\d+)$#', $requestUri, $matches) && $requestMethod === 'GET') {
     $page = $_GET['page'] ?? 1;
-    $transactionController->getHistory($account, $page);
+    $transactionController->getHistory($matches[1], $page);
     return;
 }
+
+if (preg_match('#^/api/beneficiary/(\d+)/(\d+)$#', $requestUri, $matches) && $requestMethod === 'DELETE') {
+    $beneficiaryController->delete($matches[2], $matches[1]); // beneficiaryId, userId
+    return;
+}
+
+if (preg_match('#^/api/balance/(\d+)$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $accountController->getBalance($matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/change-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+    $authController->changePin($matches[1]);
+    return;
+}
+
+
+// QUERY PARAM ROUTE (optional)
+// if ($routeKey === 'GET /api/balance') {
+//     $accountNumber = $_GET['account_number'] ?? '';
+//     $accountController->getBalance($accountNumber);
+//     return;
+// }
 
 // DEFAULT
 ResponseHelper::error([], 'Route not found', 404);

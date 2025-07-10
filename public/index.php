@@ -46,3 +46,8 @@ require_once '../app/services/AuthService.php';
 
 
 require_once '../routes/api.php';
+
+
+
+// I installed phpmailer for sending emails
+// composer require phpmailer/phpmailer

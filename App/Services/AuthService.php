@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Services\MailService;
 use App\Core\Model;
 use App\Services\AccountService;
 use App\Models\User;
@@ -107,7 +108,7 @@ class AuthService
 
     public function changePassword($userId, $oldPassword, $newPassword)
     {
-        $user = $this->user->findById($userId);
+        $user = $this->user->fetchDetails($userId);
 
         if (!$user || !password_verify($oldPassword, $user['password'])) {
             return ['success' => false, 'message' => 'Old password is incorrect.'];
@@ -121,22 +122,55 @@ class AuthService
             : ['success' => false, 'message' => 'Password update failed.'];
     }
 
-    public function resetPassword($email)
-    {
-        $user = $this->user->findByEmail($email);
+    // public function resetPassword($email)
+    // {
+    //     $user = $this->user->findByEmail($email);
 
-        if (!$user) {
-            return ['success' => false, 'message' => 'Email not found.'];
+    //     if (!$user) {
+    //         return ['success' => false, 'message' => 'Email not found.'];
+    //     }
+
+    //     // Mock reset: Assign temporary password
+    //     $tempPassword = 'Temp1234';
+    //     $hashed = password_hash($tempPassword, PASSWORD_DEFAULT);
+    //     $this->user->updatePassword($user['id'], $hashed);
+
+    //     return [
+    //         'success' => true,
+    //         'message' => "Temporary password assigned (mock): {$tempPassword}"
+    //     ];
+    // }
+
+    public function changePin($userId, $oldPin, $newPin)
+    {
+        $user = $this->user->fetchDetails($userId);
+
+        if (!$user || !password_verify($oldPin, $user['transaction_pin'])) {
+            return ['success' => false, 'message' => 'Old PIN is incorrect.'];
         }
 
-        // Mock reset: Assign temporary password
-        $tempPassword = 'Temp1234';
-        $hashed = password_hash($tempPassword, PASSWORD_DEFAULT);
-        $this->user->updatePassword($user['id'], $hashed);
+        $newHash = password_hash($newPin, PASSWORD_DEFAULT);
+        $updated = $this->user->updatePin($userId, $newHash);
 
-        return [
-            'success' => true,
-            'message' => "Temporary password assigned (mock): {$tempPassword}"
-        ];
+        return $updated
+            ? ['success' => true, 'message' => 'Transaction PIN changed successfully.']
+            : ['success' => false, 'message' => 'Transaction PIN update failed.'];
     }
+
+    public function requestResetCode($email)
+    {
+        $user = $this->user->findByEmail($email);
+        if (!$user) return ['success' => false, 'message' => 'Email not found.'];
+
+        $code = random_int(100000, 999999);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
+        // Save to reset_codes table
+        $this->user->storeResetCode($user['id'], $code, $expiresAt);
+
+        (new MailService())->sendResetCode($email, $code);
+
+        return ['success' => true, 'message' => 'Reset code sent to your email.'];
+    }
+
 }

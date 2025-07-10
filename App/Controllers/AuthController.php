@@ -51,5 +51,24 @@ class AuthController extends AuthMiddleware
         return ResponseHelper::error([], $result['message']);
     }
 
+    public function changePin($userId)
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $validator = new PasswordValidator();
+        $errors = $validator->validatePinChange($data);
+
+        if (!empty($errors)) {
+            return ResponseHelper::error($errors, "Validation failed", 422);
+        }
+
+        $result = $this->authService->changePin($userId, $data['old_pin'], $data['new_pin']);
+
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        }
+
+        return ResponseHelper::error([], $result['message']);
+    }
+
 
 }

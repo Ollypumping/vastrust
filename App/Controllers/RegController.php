@@ -69,4 +69,27 @@ class RegController
         $this->service->resetPassword($email);
         return ResponseHelper::success([], 'Reset password link sent (mock)');
     }
+
+    public function verifyResetCode($email, $code)
+    {
+        $user = $this->user->findByEmail($email);
+        if (!$user) return ['success' => false, 'message' => 'Invalid email.'];
+
+        $isValid = $this->user->verifyCode($user['id'], $code);
+        if (!$isValid) return ['success' => false, 'message' => 'Invalid or expired code.'];
+
+        return ['success' => true, 'message' => 'Code verified.'];
+    }
+
+    public function updatePasswordAfterReset($email, $newPassword)
+    {
+        $user = $this->user->findByEmail($email);
+        if (!$user) return ['success' => false, 'message' => 'Invalid user.'];
+
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $this->user->updatePassword($user['id'], $hashed);
+
+        return ['success' => true, 'message' => 'Password updated successfully.'];
+    }
+
 }
