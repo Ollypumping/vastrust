@@ -44,7 +44,7 @@ class AuthMiddleware
         }
 
         
-        $_SESSION['user_id'] = $user['id'];
+        //$_SESSION['user_id'] = $user['id'];
     }
 
     private static function unauthorized($message)
