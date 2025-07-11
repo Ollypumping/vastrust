@@ -1,15 +1,19 @@
 <?php
 namespace App\Services;
 
+use App\Core\Model;
+use App\Services\AccountService;
 use App\Models\User;
 
 class AuthService
 {
     private $user;
+    private $accountService;
 
     public function __construct()
     {
         $this->user = new User();
+        $this->accountService = new AccountService();
     }
 
     public function register($data, $file)
@@ -21,41 +25,68 @@ class AuthService
             ];
         }
 
+        // Hash password
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        $data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
 
+        // Handle optional transaction PIN
+        $data['transaction_pin'] = !empty($data['transaction_pin'])
+            ? password_hash($data['transaction_pin'], PASSWORD_DEFAULT)
+            : null;
+
+        // Handle optional occupation
+        $data['occupation'] = $data['occupation'] ?? null;
+
+        // Handle passport photo upload
         $photoName = null;
-
-        if (!empty($files['passport_photo']['name'])) {
-            $photoName = time() . '_' . $files['passport_photo']['name'];
-            $targetPath = _DIR_ . '/../../storage/uploads/' . $photoName;
-            move_uploaded_file($files['passport_photo']['tmp_name'], $targetPath);
+        if (!empty($file['passport_photo']['name'])) {
+            $photoName = time() . '_' . $file['passport_photo']['name'];
+            $targetPath = __DIR__ . '/../../storage/uploads/' . $photoName;
+            move_uploaded_file($file['passport_photo']['tmp_name'], $targetPath);
         }
 
         $data['passport_photo'] = $photoName;
 
-        $success = $this->user->create([
+        // Create user
+        $userCreated = $this->user->create([
             'email' => $data['email'],
             'password' => $data['password'],
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'account_number' => $data['account_number'] ?? null,
             'passport_photo' => $data['passport_photo'],
             'age' => $data['age'],
             'occupation' => $data['occupation'],
             'address' => $data['address'],
             'phone_number' => $data['phone_number'],
             'bvn' => $data['bvn'],
-            'transaction_pin' => $data['transaction_pin'],
-            'nok_first_name' => $data['nok_first_name'],
-            'nok_last_name' => $data['nok_last_name'],
-            'nok_phone_number' => $data['nok_phone_number'],
-            'nok_address' => $data['nok_address']
+            'transaction_pin' => $data['transaction_pin']
         ]);
 
-        return $success
-            ? ['success' => true, 'message' => 'User registered successfully.', 'data' => ['email' => $data['email']]]
-            : ['success' => false, 'message' => 'User registration failed.'];
+        if (!$userCreated) {
+            return [
+                'success' => false,
+                'message' => 'User registration failed.'
+            ];
+        }
+
+        // Create account
+        $userId = $this->user->getLastInsertId();
+        $account = $this->accountService->create($userId, $data['account_type'] ?? 'savings');
+
+        if ($account['success']) {
+            $this->user->updateAccountNumber($userId, $account['data']['account_number']);
+        }
+
+        return [
+            'success' => true,
+            'message' => 'User registered successfully.',
+            'data' => [
+                'email' => $data['email'],
+                'account' => $account
+            ]
+        ];
     }
+
 
     public function login($email, $password)
     {

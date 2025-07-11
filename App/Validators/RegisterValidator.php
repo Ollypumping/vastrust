@@ -9,9 +9,9 @@ class RegisterValidator
 
         // Required text fields
         $requiredFields = [
-            'email', 'password', 'first_name', 'last_name', 'age', 'occupation',
-            'address', 'phone_number', 'bvn', 'transaction_pin',
-            'nok_first_name', 'nok_last_name', 'nok_phone_number', 'nok_address'
+            'email', 'password', 'first_name', 'last_name', 'age',
+            'address', 'phone_number', 'bvn'
+            
         ];
 
         foreach ($requiredFields as $field) {
@@ -36,7 +36,7 @@ class RegisterValidator
         }
 
         // Phone numbers should be digits (optional length check)
-        $phoneFields = ['phone_number', 'nok_phone_number'];
+        $phoneFields = ['phone_number'];
         foreach ($phoneFields as $phoneField) {
             if (!empty($data[$phoneField]) && !preg_match('/^0\d{10}$/', $data[$phoneField])) {
                 $errors[$phoneField] = ucfirst(str_replace('_', ' ', $phoneField)) . ' must be an 11-digit number starting with 0.';
@@ -44,17 +44,16 @@ class RegisterValidator
         }
 
         // Passport photo checks
-        if (!empty($files['passport_photo']['name'])) {
-            $allowed = ['image/jpeg', 'image/png', 'image/jpg'];
-            if (!in_array($files['passport_photo']['type'], $allowed)) {
-                $errors['passport_photo'] = 'Invalid image type.';
-            }
-        }
+        // if (!empty($files['passport_photo']['name'])) {
+        //     $allowed = ['image/jpeg', 'image/png', 'image/jpg'];
+        //     if (!in_array($files['passport_photo']['type'], $allowed)) {
+        //         $errors['passport_photo'] = 'Invalid image type.';
+        //     }
+        // }
         // Pin checks
-        if (empty($data['transaction_pin']) || !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
+        if (!empty($data['transaction_pin']) && !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
             $errors['transaction_pin'] = 'Transaction PIN must be a 4-digit number.';
         }
-
         return $errors;
     }
 }

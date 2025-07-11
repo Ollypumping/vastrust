@@ -39,8 +39,8 @@ class TransactionService
         $this->account->updateBalance($accountNumber, $newBalance);
 
         $this->transaction->log([
-            'from_account' => $accountNumber,
-            'to_account' => null,
+            'sender_account' => $accountNumber,
+            'receiver_account' => null,
             'type' => 'withdrawal',
             'amount' => $amount,
             'description' => 'Withdrawal',
@@ -50,7 +50,7 @@ class TransactionService
         return ['success' => true, 'message' => 'Withdrawal successful.'];
     }
 
-    public function transfer($from, $to, $amount, $externalBank = null, $pin)
+    public function transfer($from, $to, $amount, $pin, $externalBank = null)
     {
         $user = $this->user->findById($_SESSION['user_id']);
 
@@ -88,14 +88,14 @@ class TransactionService
         }
         else if ($toAccount) {
             (new BeneficiaryService())->saveBeneficiary(
-                $_SESSION['user_id'], $to, $toAccount['account_name']);
+                $_SESSION['user_id'], $to, $toAccount['first_name'] . ' ' . $toAccount['last_name']);
         }
 
         // Interbank: don't credit anyone
         if (!$toAccount && $externalBank) {
             $this->transaction->log([
-                'from_account' => $from,
-                'to_account' => null,
+                'sender_account' => $from,
+                'receiver_account' => null,
                 'type' => 'transfer',
                 'amount' => $amount,
                 'description' => 'Interbank transfer to ' . $externalBank,
@@ -110,8 +110,8 @@ class TransactionService
         $this->account->updateBalance($to, $toAccount['balance'] + $amount);
 
         $this->transaction->log([
-            'from_account' => $from,
-            'to_account' => $to,
+            'sender_account' => $from,
+            'receiver_account' => $to,
             'type' => 'transfer',
             'amount' => $amount,
             'description' => 'Intra-bank transfer',
@@ -134,8 +134,8 @@ class TransactionService
         $this->account->updateBalance($accountNumber, $newBalance);
 
         $this->transaction->log([
-            'from_account' => null,
-            'to_account' => $accountNumber,
+            'sender_account' => null,
+            'receiver_account' => $accountNumber,
             'type' => 'deposit',
             'amount' => $amount,
             'description' => 'Deposit',

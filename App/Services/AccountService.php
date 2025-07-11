@@ -2,7 +2,7 @@
 namespace App\Services;
 
 use App\Models\Account;
-use App\Helpers\AccountNumberGenerator;
+use App\Helpers\AcctNumGenerator;
 
 class AccountService
 {
@@ -16,11 +16,11 @@ class AccountService
     public function create($userId, $accountType = 'savings')
     {
         // To generate a unique 10-digit account number
-        $accountNumber = AccountNumberGenerator::generate();
+        $accountNumber = AcctNumGenerator::generate();
 
         // To check uniqueness in the DB
         while ($this->account->getByAccountNumber($accountNumber)) {
-            $accountNumber = AccountNumberGenerator::generate();
+            $accountNumber = AcctNumGenerator::generate();
         }
 
         $data = [
@@ -36,7 +36,7 @@ class AccountService
             ? [
                 'success' => true,
                 'message' => 'Account created successfully.',
-                'data' => ['account_number' => $accountNumber, 'account_type' => $accountType]
+                'data' => ['account_number' => $accountNumber, 'account_type' => $accountType, 'balance' => 0.00]
             ]
             : [
                 'success' => false,

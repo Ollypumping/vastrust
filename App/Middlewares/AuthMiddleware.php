@@ -16,9 +16,13 @@ class AuthMiddleware
         $uri = $_SERVER['REQUEST_URI'];
         $uri = strtok($uri, '?'); // remove query params
 
-        if (!in_array($uri, $publicRoutes)) {
-            self::check();
-        }
+//        if (!in_array($uri, $publicRoutes)) {
+//            self::check();
+//        }
+
+//        $this->check();
+
+
     }
 
     public static function check()
@@ -39,7 +43,7 @@ class AuthMiddleware
             exit;
         }
 
-        // Attach user ID for use in controllers
+
         $_SESSION['user_id'] = $user['id'];
     }
 

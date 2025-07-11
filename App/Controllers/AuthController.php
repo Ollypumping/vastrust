@@ -2,11 +2,14 @@
 namespace App\Controllers;
 
 use App\Middlewares\AuthMiddleware;
+use App\Middlewares\JwtMiddleware;
 use App\Services\AuthService;
 use App\Validators\RegisterValidator;
 use App\Validators\LoginValidator;
 use App\Validators\PasswordValidator;
 use App\Helpers\ResponseHelper;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 class AuthController
 {
@@ -14,8 +17,8 @@ class AuthController
 
     public function __construct()
     {
+//        parent::__construct();
         $this->authService = new AuthService();
-        AuthMiddleware::check();
     }
 
 
@@ -23,6 +26,7 @@ class AuthController
 
     public function profile($userId)
     {
+        JwtMiddleware::check();
         $result = $this->authService->getProfile($userId);
 
         if ($result) {
@@ -34,6 +38,7 @@ class AuthController
 
     public function changePassword($userId)
     {
+        JwtMiddleware::check();
         $data = json_decode(file_get_contents("php://input"), true);
         $validator = new PasswordValidator();
         $errors = $validator->validateChange($data);
@@ -49,6 +54,37 @@ class AuthController
         }
 
         return ResponseHelper::error([], $result['message']);
+    }
+
+    public function login()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $validator = new LoginValidator();
+        $errors = $validator->validate($data);
+
+        if (!empty($errors)) {
+            return ResponseHelper::error($errors, "Validation failed", 422);
+        }
+
+        $result = $this->authService->login($data['email'], $data['password']);
+
+        if ($result['success']) {
+            // Generate JWT
+            $env = parse_ini_file(__DIR__ . '/../../.env');
+            $secret = $env['JWT_SECRET'];
+            $payload = [
+                'user_id' => $result['data']['user_id'],
+                'email' => $result['data']['email'],
+                'exp' => time() + 60*60*24 // 1 day
+            ];
+            $jwt = JWT::encode($payload, $secret, 'HS256');
+            return ResponseHelper::success([
+                'token' => $jwt,
+                'user' => $result['data']
+            ], $result['message']);
+        }
+
+        return ResponseHelper::error([], $result['message'], 401);
     }
 
 
