@@ -11,7 +11,7 @@ class JwtMiddleware
     {
         $headers = function_exists('getallheaders') ? getallheaders() : [];
         if (!isset($headers['Authorization'])) {
-            ResponseHelper::error([], 'Authorization header missing', 401);
+            ResponseHelper::error([], 'Authorization header missing ', 401);
             exit;
         }
         $authHeader = $headers['Authorization'];
@@ -25,6 +25,7 @@ class JwtMiddleware
         try {
             $decoded = JWT::decode($jwt, new Key($secret, 'HS256'));
             $_SESSION['user_id'] = $decoded->user_id;
+            $_SESSION['decoded'] = $decoded;
             // Optionally, set more user info in session
         } catch (\Exception $e) {
             ResponseHelper::error([], 'Invalid or expired token', 401);

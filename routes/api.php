@@ -30,7 +30,7 @@ switch ($routeKey) {
 }
 
 
-new AuthMiddleware();
+//new AuthMiddleware();
 
 // PROTECTED CONTROLLERS
 $authController = new AuthController();

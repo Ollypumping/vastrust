@@ -24,17 +24,51 @@ class AuthController
 
 
 
+//    public function profile($userId)
+//    {
+//        JwtMiddleware::check();
+//        $result = $this->authService->getProfile($userId);
+//
+//        if ($result) {
+//            return ResponseHelper::success($result, "Profile retrieved successfully");
+//        }
+//
+//        return ResponseHelper::error([], "User not found", 404);
+//    }
+
     public function profile($userId)
     {
         JwtMiddleware::check();
-        $result = $this->authService->getProfile($userId);
 
-        if ($result) {
-            return ResponseHelper::success($result, "Profile retrieved successfully");
+        // Get decoded JWT from session
+        $decodedJwt = $_SESSION['decoded'] ?? null;
+
+        if (!$decodedJwt) {
+            return ResponseHelper::error([], "JWT payload missing in session", 500);
         }
 
-        return ResponseHelper::error([], "User not found", 404);
+        // Extract user_id from decoded JWT
+        $jwtUserId = $decodedJwt->user_id ?? null;
+
+        $result = $this->authService->getProfile($jwtUserId);
+        $sessionId = $_SESSION['user_id'];
+
+
+        if ($result) {
+            return ResponseHelper::success(
+                [
+                    'profile' => $result,
+                ],
+                "Profile retrieved successfully"
+            );
+        }
+
+        return ResponseHelper::error([
+            'profile' => null,
+        ], "User not found", 404);
     }
+
+
 
     public function changePassword($userId)
     {
