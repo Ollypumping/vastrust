@@ -38,7 +38,6 @@ class AuthController
 
     public function changePassword($userId)
     {
-        JwtMiddleware::check();
         $data = json_decode(file_get_contents("php://input"), true);
         $validator = new PasswordValidator();
         $errors = $validator->validateChange($data);
@@ -56,36 +55,23 @@ class AuthController
         return ResponseHelper::error([], $result['message']);
     }
 
-    public function login()
+    public function changePin($userId)
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        $validator = new LoginValidator();
-        $errors = $validator->validate($data);
+        $validator = new PasswordValidator();
+        $errors = $validator->validatePinChange($data);
 
         if (!empty($errors)) {
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->authService->login($data['email'], $data['password']);
+        $result = $this->authService->changePin($userId, $data['old_pin'], $data['new_pin']);
 
         if ($result['success']) {
-            // Generate JWT
-            $env = parse_ini_file(__DIR__ . '/../../.env');
-            $secret = $env['JWT_SECRET'];
-            $payload = [
-                'user_id' => $result['data']['user_id'],
-                'email' => $result['data']['email'],
-                'exp' => time() + 60*60*24 // 1 day
-            ];
-            $jwt = JWT::encode($payload, $secret, 'HS256');
-            return ResponseHelper::success([
-                'token' => $jwt,
-                'user' => $result['data']
-            ], $result['message']);
+            return ResponseHelper::success([], $result['message']);
         }
 
-        return ResponseHelper::error([], $result['message'], 401);
-    }
 
+    }
 
 }

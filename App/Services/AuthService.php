@@ -1,7 +1,10 @@
 <?php
 namespace App\Services;
 
+use App\Helpers\ResponseHelper;
 use App\Core\Model;
+use App\Helpers\MailerHelper;
+use App\Models\ResetCode;
 use App\Services\AccountService;
 use App\Models\User;
 
@@ -131,22 +134,55 @@ class AuthService
             : ['success' => false, 'message' => 'Password update failed.'];
     }
 
-    public function resetPassword($email)
+    
+
+    public function resetPassword()
     {
+        $input = json_decode(file_get_contents("php://input"), true);
+        $email = $input['email'] ?? null;
+
         $user = $this->user->findByEmail($email);
 
         if (!$user) {
-            return ['success' => false, 'message' => 'Email not found.'];
+            return ResponseHelper::error([], 'Email not found', 404);
         }
 
-        // Mock reset: Assign temporary password
-        $tempPassword = 'Temp1234';
-        $hashed = password_hash($tempPassword, PASSWORD_DEFAULT);
-        $this->user->updatePassword($user['id'], $hashed);
+        $otp = rand(100000, 999999); // Generate 6-digit code
+        $resetCode = new ResetCode();
+        $resetCode->invalidateCode($email); // remove old code if exists
+        $resetCode->saveCode($user['id'], $email, $otp);
 
-        return [
-            'success' => true,
-            'message' => "Temporary password assigned (mock): {$tempPassword}"
-        ];
+        $sent = MailerHelper::sendOtp($email, $otp);
+
+        return $sent
+            ? ResponseHelper::success([], 'OTP sent to your email')
+            : ResponseHelper::error([], 'Failed to send OTP' . $sent);
     }
+
+    public function confirmResetOtp($data)
+    {
+        $email = $data['email'] ?? null;
+        $otp = $data['otp'] ?? null;
+        $newPassword = $data['new_password'] ?? null;
+
+        if (!$email || !$otp || !$newPassword) {
+            return ResponseHelper::error([], 'Missing required fields');
+        }
+
+        $resetCode = new ResetCode();
+
+        if (!$resetCode->verifyCode($email, $otp)) {
+            return ResponseHelper::error([], 'Invalid or expired OTP');
+        }
+
+        $hashed = password_hash($newPassword, PASSWORD_BCRYPT);
+        $this->user->updatePasswordByEmail($email, $hashed);
+
+        $resetCode->invalidateCode($email);
+
+        return ResponseHelper::success([], 'Password has been successfully reset');
+    }
+
+    
+
 }

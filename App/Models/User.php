@@ -52,4 +52,41 @@ class User extends Model {
             'id' => $userId
         ]);
     }
+
+    public function updatePin($userId, $hashedPin)
+    {
+        $sql = "UPDATE users SET transaction_pin = :pin WHERE id = :id";
+        return $this->execute($sql, [
+            'pin' => $hashedPin,
+            'id' => $userId
+        ]);
+    }
+
+    // public function fetchPin($userId) {
+    //     $sql = "SELECT transaction_pin FROM users WHERE id = :id";
+    //     return $this->query($sql, ['id' => $userId], true);
+    // }
+
+    public function updatePassword($userId, $newHash)
+    {
+        $sql = "UPDATE users SET password = :password WHERE id = :id";
+        return $this->execute($sql, [
+            'password' => $newHash,
+            'id' => $userId
+        ]);
+    }
+
+    public function updatePasswordByEmail($email, $newHash)
+    {
+        $sql = "UPDATE users SET password = :password WHERE email = :email";
+        return $this->execute($sql, [
+            'password' => $newHash,
+            'email' => $email
+        ]);
+    }
+
+    public function fetchDetails($userId) {
+        $sql = "SELECT * FROM users WHERE id = :id";
+        return $this->query($sql, ['id' => $userId], true);
+    }
 }

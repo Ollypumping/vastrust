@@ -27,6 +27,10 @@ switch ($routeKey) {
         $regController->login();
         return;
 
+    case 'POST /api/confirm-reset':
+        $regController->confirmOtpReset();
+        return;
+
 }
 
 

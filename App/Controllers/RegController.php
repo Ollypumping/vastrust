@@ -80,6 +80,13 @@ class RegController
         }
 
         $this->service->resetPassword($email);
-        return ResponseHelper::success([], 'Reset password link sent (mock)');
+        //return ResponseHelper::success([], 'Reset password link sent (mock)');
+    }
+
+    public function confirmOtpReset()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $response = $this->service->confirmResetOtp($data);
+        echo json_encode($response);
     }
 }
