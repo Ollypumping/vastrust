@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Services\AuthService;
+use App\Services\VerificationService;
 use App\Validators\LoginValidator;
 use App\Validators\RegisterValidator;
 use App\Helpers\ResponseHelper;
@@ -10,12 +11,14 @@ use App\Helpers\ResponseHelper;
 class RegController
 {
     private $service;
+    private $verificationService;
     private $rvalidator;
     private $lvalidator;
 
     public function __construct()
     {
         $this->service = new AuthService();
+        $this->verificationService = new VerificationService();
         $this->rvalidator = new RegisterValidator();
         $this->lvalidator = new LoginValidator();
     }
@@ -35,7 +38,9 @@ class RegController
             return ResponseHelper::error([], $result['message'], 400);
         }
 
-        return ResponseHelper::success($result['data'], 'Registration successful', 201);
+        $this->service->sendVerificationCode($result['user_id'], $email, 'register');
+
+        return ResponseHelper::success($result['data'], 'Registration successful. Verification email sent.', 201);
     }
 
    public function login()
@@ -66,30 +71,49 @@ class RegController
             return ResponseHelper::error(['email' => 'Email is required'], 'Validation failed');
         }
 
-        $this->service->resetPassword($email);
-        return ResponseHelper::success([], 'Reset password link sent (mock)');
+        $result = $this->service->resetPassword($email);
+
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        } else {
+            return ResponseHelper::error([], $result['message']);
+        }
     }
 
-    public function verifyResetCode($email, $code)
+    public function verifyCode()    // For registration
     {
-        $user = $this->user->findByEmail($email);
-        if (!$user) return ['success' => false, 'message' => 'Invalid email.'];
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = $data['email'] ?? null;
+        $code = $data['code'] ?? null;
 
-        $isValid = $this->user->verifyCode($user['id'], $code);
-        if (!$isValid) return ['success' => false, 'message' => 'Invalid or expired code.'];
-
-        return ['success' => true, 'message' => 'Code verified.'];
+        return $this->verificationService->verify($email, $code);
     }
 
-    public function updatePasswordAfterReset($email, $newPassword)
+
+    public function updatePasswordAfterReset()
     {
-        $user = $this->user->findByEmail($email);
-        if (!$user) return ['success' => false, 'message' => 'Invalid user.'];
+        $data = json_decode(file_get_contents("php://input"), true);
 
-        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
-        $this->user->updatePassword($user['id'], $hashed);
+        $email = $data['email'] ?? null;
+        $otp = $data['otp'] ?? null;
+        $new_password = $data['new_password'] ?? null;
+        $confirm_password = $data['confirm_password'] ?? null;
 
-        return ['success' => true, 'message' => 'Password updated successfully.'];
+        if (!$email || !$otp || !$new_password) {
+            return ResponseHelper::error([], 'Missing fields');
+        }
+
+        if ($new_password !== $confirm_password) {
+            return ResponseHelper::error([], 'Passwords do not match');
+        }
+
+        $result = $this->service->updatePasswordAfterVerification($email, $otp, $new_password);
+
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        } else {
+            return ResponseHelper::error([], $result['message']);
+        }
     }
 
 }

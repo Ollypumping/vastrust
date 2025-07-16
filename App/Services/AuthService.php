@@ -1,20 +1,25 @@
 <?php
 namespace App\Services;
 
-use App\Services\MailService;
+use App\Helpers\MailerHelper;
 use App\Core\Model;
 use App\Services\AccountService;
 use App\Models\User;
+use App\Helpers\ResponseHelper;
+use App\Models\Verification;
+use App\Services\VerificationService;
 
 class AuthService
 {
     private $user;
     private $accountService;
+    private $verificationService;
 
     public function __construct()
     {
         $this->user = new User();
         $this->accountService = new AccountService();
+        $this->verificationService = new VerificationService();
     }
 
     public function register($data, $file)
@@ -122,24 +127,37 @@ class AuthService
             : ['success' => false, 'message' => 'Password update failed.'];
     }
 
-    // public function resetPassword($email)
-    // {
-    //     $user = $this->user->findByEmail($email);
+    
 
-    //     if (!$user) {
-    //         return ['success' => false, 'message' => 'Email not found.'];
-    //     }
+    public function resetPassword($email)
+    {
+        $user = $this->user->findByEmail($email);
 
-    //     // Mock reset: Assign temporary password
-    //     $tempPassword = 'Temp1234';
-    //     $hashed = password_hash($tempPassword, PASSWORD_DEFAULT);
-    //     $this->user->updatePassword($user['id'], $hashed);
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'Email not found.'
+            ];
+        }
 
-    //     return [
-    //         'success' => true,
-    //         'message' => "Temporary password assigned (mock): {$tempPassword}"
-    //     ];
-    // }
+        //$verification = new VerificationService();
+        return $this->verificationService->sendCode($user['id'], $email, 'reset_password');
+    }
+
+    public function resetPin($email)
+    {
+        $user = $this->user->findByEmail($email);
+
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'Email not found.'
+            ];
+        }
+
+        //$verification = new VerificationService();
+        return $this->verificationService->sendCode($user['id'], $email, 'reset_pin');
+    }
 
     public function changePin($userId, $oldPin, $newPin)
     {
@@ -157,20 +175,74 @@ class AuthService
             : ['success' => false, 'message' => 'Transaction PIN update failed.'];
     }
 
-    public function requestResetCode($email)
+    public function sendVerificationCode($userId, $email, $type)
     {
-        $user = $this->user->findByEmail($email);
-        if (!$user) return ['success' => false, 'message' => 'Email not found.'];
-
-        $code = random_int(100000, 999999);
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
-
-        // Save to reset_codes table
-        $this->user->storeResetCode($user['id'], $code, $expiresAt);
-
-        (new MailService())->sendResetCode($email, $code);
-
-        return ['success' => true, 'message' => 'Reset code sent to your email.'];
+        return $this->verificationService->sendCode($userId, $email, $type);
     }
+
+    public function confirmVerificationCode($email, $code)
+    {
+        if (!$this->verificationService->verify($email, $code)) {
+        return ResponseHelper::error([], 'Invalid or expired code');
+    }
+
+    return ResponseHelper::success([], 'Code verified successfully');
+    }
+
+        public function updatePasswordAfterVerification($email, $otp, $newPassword)
+    {
+        $isValid = $this->verificationService->verify($email, $otp);
+
+        if (!$isValid) {
+            return [
+                'success' => false,
+                'message' => 'Invalid or expired code'
+            ];
+        }
+
+        $user = $this->user->findByEmail($email);
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'User not found'
+            ];
+        }
+
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $updated = $this->user->updatePasswordByEmail($user['email'], $hashed);
+
+        return $updated
+            ? ['success' => true, 'message' => 'Password updated successfully']
+            : ['success' => false, 'message' => 'Failed to update password'];
+    }
+
+    public function updatePinAfterVerification($email, $otp, $newPin)
+    {
+        
+        $isValid = $this->verificationService->verify($email, $otp);
+
+        if (!$isValid) {
+            return [
+                'success' => false,
+                'message' => 'Invalid or expired code'
+            ];
+        }
+
+        $user = $this->user->findByEmail($email);
+        if (!$user) {
+            return [
+                'success' => false,
+                'message' => 'User not found'
+            ];
+        }
+
+        $hashed = password_hash($newPin, PASSWORD_DEFAULT);
+        $updated = $this->user->updatePinByEmail($user['email'], $hashed);
+
+        return $updated
+            ? ['success' => true, 'message' => 'Transaction PIN updated successfully']
+            : ['success' => false, 'message' => 'Failed to update PIN'];
+    }
+
 
 }

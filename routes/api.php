@@ -27,6 +27,13 @@ switch ($routeKey) {
     case 'POST /api/login':
         $regController->login();
         return;
+
+    case 'POST /api/register-verify':
+        $regController->verifyCode();
+
+    case 'POST /api/update-reset-password':
+        $regController->updatePasswordAfterReset();
+        return;
 }
 
 // PROTECTED CONTROLLERS
@@ -100,6 +107,17 @@ if (preg_match('#^/api/change-pin/(\d+)$#', $requestUri, $matches) && $requestMe
     $authController->changePin($matches[1]);
     return;
 }
+
+if (preg_match('#^/api/reset-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $authController->resetPin();
+    return;
+}
+
+if (preg_match('#^/api/update-reset-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $authController->updatePinAfterReset();
+    return;
+}
+
 
 
 // QUERY PARAM ROUTE (optional)

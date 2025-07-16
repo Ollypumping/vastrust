@@ -6,6 +6,10 @@ use App\Helpers\ResponseHelper;
 
 class AuthMiddleware
 {
+
+    private const API_USERNAME = 'vastrust_api';
+    private const API_PASSWORD = '123456789';
+
     public function __construct()
     {
         $publicRoutes = [
@@ -32,19 +36,16 @@ class AuthMiddleware
             exit;
         }
 
-        $email = $_SERVER['PHP_AUTH_USER'];
+        $username = $_SERVER['PHP_AUTH_USER'];
         $password = $_SERVER['PHP_AUTH_PW'];
 
-        $userModel = new User();
-        $user = $userModel->findByEmail($email);
-
-        if (!$user || !password_verify($password, $user['password'])) {
+        // Compare with internal API credentials
+        if ($username !== self::API_USERNAME || $password !== self::API_PASSWORD) {
             self::unauthorized("Invalid credentials.");
             exit;
         }
 
         
-        //$_SESSION['user_id'] = $user['id'];
     }
 
     private static function unauthorized($message)

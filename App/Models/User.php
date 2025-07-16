@@ -81,4 +81,22 @@ class User extends Model {
         return $this->query($sql, ['id' => $userId], true);
     }
 
+    public function updatePasswordByEmail($email, $newHash)
+    {
+        $sql = "UPDATE users SET password = :password WHERE email = :email";
+        return $this->execute($sql, [
+            'password' => $newHash,
+            'email' => $email
+        ]);
+    }
+
+    public function updatePinByEmail($email, $newPin)
+    {
+        $sql = "UPDATE users SET transaction_pin = :pin WHERE email = :email";
+        return $this->execute($sql, [
+            'pin' => $newPin,
+            'email' => $email
+        ]);
+    }
+
 }
