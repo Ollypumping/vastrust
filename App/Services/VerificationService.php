@@ -31,7 +31,7 @@ class VerificationService
         if ($sent) {
             return [
                 'success' => true,
-                'message' => 'Verification '
+                'message' => 'Verification Email sent successfully.'
             ];
         } else {
             return [
@@ -55,6 +55,7 @@ class VerificationService
         }
 
         return [
+            'data'=> $valid,
             'success' => false,
             'message' => 'Invalid or expired verification code'
         ];

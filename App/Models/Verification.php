@@ -19,7 +19,7 @@ class Verification extends Model
     public function verifyCode($email, $otp)
     {
         $sql = "SELECT * FROM reset_codes 
-                WHERE email = :email AND code = :code AND expires_at > NOW()";
+                WHERE email = :email AND code = :code";
         return $this->query($sql, ['email' => $email, 'code' => $otp], true);
     }
 

@@ -30,6 +30,8 @@ switch ($routeKey) {
 
     case 'POST /api/register-verify':
         $regController->verifyCode();
+        return;
+        
         
 
     case 'POST /api/resend-code':

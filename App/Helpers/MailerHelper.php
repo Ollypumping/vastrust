@@ -13,9 +13,9 @@ class MailerHelper
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'olayemiojo49@gmail.com';
-        $mail->Password   = 'iqbcrruoaohswtxf'; // Gmail App Password
-        $mail->SMTPSecure = 'ssl';
-        $mail->Port       = 465;
+        $mail->Password   = 'cekfhutrgmcacyre'; // Gmail App Password
+        $mail->SMTPSecure = 'tls';
+        $mail->Port       = 587;
         $mail->setFrom('olayemiojo49@gmail.com', 'Vastrust Support');
         $mail->isHTML(true);
         return $mail;

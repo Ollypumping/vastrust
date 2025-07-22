@@ -180,11 +180,7 @@ class AuthService
 
     public function sendVerificationCode($userId, $email, $type)
     {
-        // 🔍 Debug check
-        var_dump([
-            'userId' => $userId,
-            'email' => $email
-        ]);
+        
         return $this->verificationService->sendCode($userId, $email, $type);
     }
 

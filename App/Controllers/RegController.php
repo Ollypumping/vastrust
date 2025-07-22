@@ -115,7 +115,12 @@ class RegController
         $email = $data['email'] ?? null;
         $code = $data['code'] ?? null;
 
-        return $this->verificationService->verify($email, $code);
+        $result = $this->verificationService->verify($email, $code);
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        } else {
+            return ResponseHelper::error([], $result['message']);
+        }
     }
 
 
