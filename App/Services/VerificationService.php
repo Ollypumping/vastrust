@@ -45,6 +45,7 @@ class VerificationService
     {
         $verification = new Verification();
         $valid = $verification->verifyCode($email, $otp);
+        
 
         if ($valid) {
             $verification->invalidateCode($email);
