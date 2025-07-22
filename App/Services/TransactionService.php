@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Helpers\MailerHelper;
 use App\Models\User;
 use App\Models\Account;
 use App\Models\Transaction;
@@ -20,7 +21,7 @@ class TransactionService
 
     public function withdraw($accountNumber, $amount, $pin)
     {
-        $user = $this->user->findById($_SESSION['user_id']);
+        $user = $this->user->findById($userId);
         $account = $this->account->getByAccountNumber($accountNumber);
 
         if (!$account) {
@@ -47,12 +48,21 @@ class TransactionService
             'status' => 'success'
         ]);
 
+        MailerHelper::sendWithdrawalNotification(
+            $user['email'],
+            $user['first_name'],
+            $amount,
+            $newBalance
+        );
+
+
+
         return ['success' => true, 'message' => 'Withdrawal successful.'];
     }
 
     public function transfer($from, $to, $amount, $pin, $externalBank = null)
     {
-        $user = $this->user->findById($_SESSION['user_id']);
+        $user = $this->user->findById($userId);
 
         if (!$user || !password_verify($pin, $user['transaction_pin'])) {
             return ['success' => false, 'message' => 'Invalid transaction PIN.'];
@@ -79,7 +89,18 @@ class TransactionService
         }
 
         // Deduct from sender
-        $this->account->updateBalance($from, $fromAccount['balance'] - $amount);
+        $newSenderBalance = $fromAccount['balance'] - $amount;
+        $this->account->updateBalance($from, $newSenderBalance);
+
+        // ✅ Send debit alert to sender (applies to both interbank and intrabank)
+        MailerHelper::sendTransferNotification(
+            $user['email'],
+            $user['first_name'],
+            $amount,
+            $toAccount ? ($toAccount['first_name'] . ' ' . $toAccount['last_name']) : "Acct No: $to @ $externalBank",
+            $newSenderBalance
+        );
+
 
         //Add to beneficiary
         if(!$toAccount && $externalBank) {
@@ -107,7 +128,8 @@ class TransactionService
         }
 
         // Intra-bank: credit recipient
-        $this->account->updateBalance($to, $toAccount['balance'] + $amount);
+        $newReceiverBalance = $toAccount['balance'] + $amount;
+        $this->account->updateBalance($to, $newReceiverBalance);
 
         $this->transaction->log([
             'sender_account' => $from,
@@ -119,12 +141,22 @@ class TransactionService
             'external_bank' => null
         ]);
 
+        // ✅ Send credit alert to receiver
+        MailerHelper::sendCreditAlertNotification(
+            $toAccount['email'],
+            $toAccount['first_name'] . ' ' . $toAccount['last_name'],
+            $amount,
+            $user['first_name'] . ' ' . $user['last_name'],
+            $newReceiverBalance
+        );
+
         return ['success' => true, 'message' => 'Intra-bank transfer completed.'];
 
     }
 
     public function deposit($accountNumber, $amount)
     {
+        $user = $this->user->findById($userId);
         $account = $this->account->getByAccountNumber($accountNumber);
         if (!$account) {
             return ['success' => false, 'message' => 'Account not found.'];
@@ -141,6 +173,13 @@ class TransactionService
             'description' => 'Deposit',
             'status' => 'success'
         ]);
+
+        MailerHelper::sendDepositNotification(
+            $user['email'],
+            $user['first_name'],
+            $amount,
+            $newBalance
+        );
 
         return ['success' => true, 'message' => 'Deposit successful.'];
     }

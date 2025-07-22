@@ -9,8 +9,8 @@ class RegisterValidator
 
         // Required text fields
         $requiredFields = [
-            'email', 'password', 'first_name', 'last_name', 'age', 'occupation',
-            'address', 'phone_number', 'bvn', 'transaction_pin'
+            'email', 'password', 'first_name', 'last_name', 'dob', //'occupation',
+            'address', 'phone_number', 'bvn', //'transaction_pin'
             
         ];
 
@@ -30,10 +30,33 @@ class RegisterValidator
             $errors['bvn'] = 'BVN must be exactly 11 digits.';
         }
 
-        // Age must be a positive integer
-        if (!empty($data['age']) && (!is_numeric($data['age']) || $data['age'] < 1)) {
-            $errors['age'] = 'Age must be a valid number.';
+        // Validate date of birth (dob)
+        if (!empty($data['dob'])) {
+            $dob = $data['dob'];
+            
+            // Check if it's a valid date
+            $dateParts = explode('-', $dob);
+            if (count($dateParts) !== 3 || !checkdate($dateParts[1], $dateParts[2], $dateParts[0])) {
+                $errors['dob'] = 'Date of birth must be a valid date in YYYY-MM-DD format.';
+            } else {
+                $birthTimestamp = strtotime($dob);
+                $now = time();
+
+                if ($birthTimestamp > $now) {
+                    $errors['dob'] = 'Date of birth cannot be in the future.';
+                }
+
+                $birthDate = new \DateTime($dob);
+                $today = new \DateTime('today');
+                $age = $birthDate->diff($today)->y;
+                if ($age < 18) {
+                    $errors['dob'] = 'You must be at least 18 years old to register.';
+                }
+            }
+        } else {
+            $errors['dob'] = 'Date of birth is required.';
         }
+
 
         // Phone numbers should be digits (optional length check)
         $phoneFields = ['phone_number'];
@@ -50,10 +73,9 @@ class RegisterValidator
         //         $errors['passport_photo'] = 'Invalid image type.';
         //     }
         // }
-        // Pin checks
-        if (empty($data['transaction_pin']) || !preg_match('/^\d{4}$/', $data['transaction_pin'])) {
-            $errors['transaction_pin'] = 'Transaction PIN must be a 4-digit number.';
-        }
+
+
+        
 
         return $errors;
     }

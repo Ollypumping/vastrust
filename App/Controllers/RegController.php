@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\User;
 use App\Services\AuthService;
 use App\Services\VerificationService;
 use App\Validators\LoginValidator;
@@ -10,6 +11,7 @@ use App\Helpers\ResponseHelper;
 
 class RegController
 {
+    private $user;
     private $service;
     private $verificationService;
     private $rvalidator;
@@ -17,6 +19,7 @@ class RegController
 
     public function __construct()
     {
+        $this->user = new User();
         $this->service = new AuthService();
         $this->verificationService = new VerificationService();
         $this->rvalidator = new RegisterValidator();
@@ -38,7 +41,7 @@ class RegController
             return ResponseHelper::error([], $result['message'], 400);
         }
 
-        $this->service->sendVerificationCode($result['user_id'], $email, 'register');
+        $this->service->sendVerificationCode($result['data']['user_id'], $result['data']['email'], 'register');
 
         return ResponseHelper::success($result['data'], 'Registration successful. Verification email sent.', 201);
     }
@@ -79,6 +82,32 @@ class RegController
             return ResponseHelper::error([], $result['message']);
         }
     }
+
+    public function resendCode()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = $data['email'] ?? null;
+
+        if (!$email) {
+            return ResponseHelper::error(['email' => 'Email is required'], 'Validation failed');
+        }
+
+        // Check if user exists
+        $user = $this->user->findByEmail($email);
+        if (!$user) {
+            return ResponseHelper::error([], 'User not found', 404);
+        }
+
+        // Resend verification code
+        $response = $this->service->sendVerificationCode($user['id'], $email, 'register');
+
+        if ($response['success']) {
+            return ResponseHelper::success([], $response['message'] ?? 'Verification code resent.');
+        }
+
+        return ResponseHelper::error([], $response['message'] ?? 'Failed to resend verification code');
+    }
+
 
     public function verifyCode()    // For registration
     {

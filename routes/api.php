@@ -30,6 +30,11 @@ switch ($routeKey) {
 
     case 'POST /api/register-verify':
         $regController->verifyCode();
+        
+
+    case 'POST /api/resend-code':
+        $regController->resendCode();
+        return;
 
     case 'POST /api/update-reset-password':
         $regController->updatePasswordAfterReset();
@@ -54,6 +59,11 @@ if (preg_match('#^/api/profile/(\d+)$#', $requestUri, $matches) && $requestMetho
 
 if (preg_match('#^/api/change-password/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
     $authController->changePassword($matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/setup-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $authController->setupTransactionPin($matches[1]);
     return;
 }
 

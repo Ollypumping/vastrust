@@ -114,6 +114,36 @@ class AuthController extends AuthMiddleware
         }
     }
 
+    public function setupTransactionPin()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $email = $data['email'] ?? '';
+        $pin = $data['transaction_pin'] ?? '';
+        $confirmPin = $data['confirm_pin'] ?? '';
+
+        if (!$email || !$pin || !$confirmPin) {
+            return ResponseHelper::error([], 'All fields are required', 422);
+        }
+
+        if (!preg_match('/^\d{4}$/', $pin)) {
+            return ResponseHelper::error('Transaction PIN must be a 4-digit number.');
+        }
+
+        if ($pin !== $confirmPin) {
+            return ResponseHelper::error([], 'PINs do not match', 422);
+        }
+
+        $result = $this->service->setupTransactionPin($email, $pin);
+
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        }
+
+        return ResponseHelper::error([], $result['message'], 400);
+    }
+
+
 
 
 }

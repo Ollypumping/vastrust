@@ -31,7 +31,7 @@ class VerificationService
         if ($sent) {
             return [
                 'success' => true,
-                'message' => 'Verification code sent successfully'
+                'message' => 'Verification '
             ];
         } else {
             return [

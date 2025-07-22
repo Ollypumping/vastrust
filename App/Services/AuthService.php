@@ -32,14 +32,14 @@ class AuthService
         }
 
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        $data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
+        //$data['transaction_pin'] = password_hash($data['transaction_pin'], PASSWORD_DEFAULT);
 
         $photoName = null;
 
-        if (!empty($files['passport_photo']['name'])) {
-            $photoName = time() . '_' . $files['passport_photo']['name'];
+        if (!empty($file['passport_photo']['name'])) {
+            $photoName = time() . '_' . $file['passport_photo']['name'];
             $targetPath = _DIR_ . '/../../storage/uploads/' . $photoName;
-            move_uploaded_file($files['passport_photo']['tmp_name'], $targetPath);
+            move_uploaded_file($file['passport_photo']['tmp_name'], $targetPath);
         }
 
         $data['passport_photo'] = $photoName;
@@ -51,12 +51,12 @@ class AuthService
             'last_name' => $data['last_name'],
             'account_number' => $data['account_number'] ?? null,
             'passport_photo' => $data['passport_photo'],
-            'age' => $data['age'],
-            'occupation' => $data['occupation'],
+            'dob' => $data['dob'],
+            'occupation' => $data['occupation'] ?? null,
             'address' => $data['address'],
             'phone_number' => $data['phone_number'],
             'bvn' => $data['bvn'],
-            'transaction_pin' => $data['transaction_pin']
+            //'transaction_pin' => $data['transaction_pin']
             // 'nok_first_name' => $data['nok_first_name'],
             // 'nok_last_name' => $data['nok_last_name'],
             // 'nok_phone_number' => $data['nok_phone_number'],
@@ -78,6 +78,7 @@ class AuthService
             'success' => true,
             'message' => 'User registered successfully.',
             'data' => [
+                'user_id' => $userId,
                 'email' => $data['email'],
                 'account' => $account
             ]
@@ -94,6 +95,8 @@ class AuthService
                 'message' => 'Invalid email or password.'
             ];
         }
+
+        MailerHelper::sendLoginNotification($email, $user['first_name']);
 
         return [
             'success' => true,
@@ -177,6 +180,11 @@ class AuthService
 
     public function sendVerificationCode($userId, $email, $type)
     {
+        // 🔍 Debug check
+        var_dump([
+            'userId' => $userId,
+            'email' => $email
+        ]);
         return $this->verificationService->sendCode($userId, $email, $type);
     }
 
@@ -189,7 +197,8 @@ class AuthService
     return ResponseHelper::success([], 'Code verified successfully');
     }
 
-        public function updatePasswordAfterVerification($email, $otp, $newPassword)
+
+    public function updatePasswordAfterVerification($email, $otp, $newPassword)
     {
         $isValid = $this->verificationService->verify($email, $otp);
 
@@ -243,6 +252,22 @@ class AuthService
             ? ['success' => true, 'message' => 'Transaction PIN updated successfully']
             : ['success' => false, 'message' => 'Failed to update PIN'];
     }
+
+    public function setupTransactionPin($email, $pin)
+    {
+        $user = $this->user->findByEmail($email);
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found.'];
+        }
+
+        $hashedPin = password_hash($pin, PASSWORD_DEFAULT);
+        $updated = $this->user->updatePinByEmail($user['email'], $hashedPin);
+
+        return $updated
+            ? ['success' => true, 'message' => 'Transaction PIN set successfully.']
+            : ['success' => false, 'message' => 'Failed to set transaction PIN.'];
+    }
+
 
 
 }
