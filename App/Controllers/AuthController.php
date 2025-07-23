@@ -134,7 +134,7 @@ class AuthController extends AuthMiddleware
             return ResponseHelper::error([], 'PINs do not match', 422);
         }
 
-        $result = $this->service->setupTransactionPin($email, $pin);
+        $result = $this->authService->setupTransactionPin($email, $pin);
 
         if ($result['success']) {
             return ResponseHelper::success([], $result['message']);

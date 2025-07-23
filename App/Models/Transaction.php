@@ -10,9 +10,9 @@ class Transaction extends Model {
 
     public function log($data) {
         $sql = "INSERT INTO transactions (
-                    sender_account, receiver_account, type, amount, description, status
+                    sender_account, receiver_account, type, amount, description, status, external_bank
                 ) VALUES (
-                    :sender_account, :receiver_account, :type, :amount, :description, :status
+                    :sender_account, :receiver_account, :type, :amount, :description, :status, :external_bank
                 )";
         return $this->execute($sql, $data);
     }

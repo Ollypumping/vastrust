@@ -35,7 +35,7 @@ class TransactionController extends AuthMiddleware
             : ResponseHelper::error([], $result['message'], 400);
     }
 
-    public function transfer()
+    public function transfer($userId)
     {
         $data = json_decode(file_get_contents("php://input"), true);
         $errors = $this->validator->validateTransfer($data);
@@ -44,7 +44,7 @@ class TransactionController extends AuthMiddleware
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->service->transfer($data['from_account'], $data['to_account'], $data['amount'], $data['pin'], $data['external_bank'] ?? null);
+        $result = $this->service->transfer($userId, $data['from_account'], $data['to_account'], $data['amount'], $data['pin'], $data['external_bank'] ?? null);
 
         return $result['success']
             ? ResponseHelper::success([], $result['message'])

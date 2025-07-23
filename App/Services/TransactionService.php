@@ -60,11 +60,21 @@ class TransactionService
         return ['success' => true, 'message' => 'Withdrawal successful.'];
     }
 
-    public function transfer($from, $to, $amount, $pin, $externalBank = null)
+    public function transfer($userId, $from, $to, $amount, $pin, $externalBank = null)
     {
-        $user = $this->user->findById($userId);
+        $user = $this->user->fetchDetails($userId);
+        //var_dump($user); exit;
 
-        if (!$user || !password_verify($pin, $user['transaction_pin'])) {
+
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found.'];
+        }
+
+        if (empty($user['transaction_pin'])) {
+            return ['success' => false, 'message' => 'Transaction PIN not set.'];
+        }
+
+        if (!password_verify($pin, $user['transaction_pin'])) {
             return ['success' => false, 'message' => 'Invalid transaction PIN.'];
         }
 
@@ -83,7 +93,7 @@ class TransactionService
         }
 
         // Check if it's interbank
-        $toAccount = $this->account->getByAccountNumber($to);
+        $toAccount = $this->account->getFullAccountDetails($to);
         if (!$toAccount && !$externalBank) {
             return ['success' => false, 'message' => 'Receiver account not found.'];
         }

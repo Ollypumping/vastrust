@@ -62,10 +62,10 @@ class User extends Model {
         ]);
     }
 
-    // public function fetchPin($userId) {
-    //     $sql = "SELECT transaction_pin FROM users WHERE id = :id";
-    //     return $this->query($sql, ['id' => $userId], true);
-    // }
+    public function fetchPin($userId) {
+        $sql = "SELECT transaction_pin FROM users WHERE id = :id";
+        return $this->query($sql, ['id' => $userId], true);
+    }
 
     public function updatePassword($userId, $newHash)
     {

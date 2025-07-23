@@ -23,6 +23,16 @@ class Account extends Model {
         return $this->query($sql, ['account_number' => $account_number], true);
     }
 
+    public function getFullAccountDetails($accountNumber) {
+        $sql = "SELECT a.*, u.first_name, u.last_name, u.email
+                FROM accounts a
+                JOIN users u ON a.user_id = u.id
+                WHERE a.account_number = :account_number";
+
+        return $this->query($sql, ['account_number' => $accountNumber], true);
+    }
+
+
     public function updateBalance($account_number, $new_balance) {
         $sql = "UPDATE accounts SET balance = :balance WHERE account_number = :account_number";
         return $this->execute($sql, [
