@@ -39,7 +39,9 @@ class AuthController extends AuthMiddleware
         $errors = $validator->validateChange($data);
 
         if (!empty($errors)) {
-            return ResponseHelper::error($errors, "Validation failed", 422);
+
+            $firstError = reset($errors);
+            return ResponseHelper::error([], $firstError, 422);
         }
 
         $result = $this->authService->changePassword($userId, $data['old_password'], $data['new_password']);
