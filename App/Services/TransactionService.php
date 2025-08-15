@@ -115,11 +115,11 @@ class TransactionService
         //Add to beneficiary
         if(!$toAccount && $externalBank) {
             (new BeneficiaryService())->saveBeneficiary(
-                $_SESSION['user_id'], $to, 'External Beneficiary', $externalBank);
+                $userId, $to, 'External Beneficiary', $externalBank);
         }
         else if ($toAccount) {
             (new BeneficiaryService())->saveBeneficiary(
-                $_SESSION['user_id'], $to, $toAccount['first_name'] . ' ' . $toAccount['last_name']);
+                $userId, $to, $toAccount['first_name'] . ' ' . $toAccount['last_name']);
         }
 
         // Interbank: don't credit anyone

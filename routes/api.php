@@ -7,6 +7,7 @@ use App\Controllers\TransactionController;
 use App\Controllers\BeneficiaryController;
 use App\Middlewares\AuthMiddleware;
 use App\Helpers\ResponseHelper;
+use App\Helpers\BankHelper;
 
 $requestUri = rtrim(strtok($_SERVER['REQUEST_URI'], '?'), '/');
 $requestMethod = $_SERVER['REQUEST_METHOD'];
@@ -48,6 +49,7 @@ $authController = new AuthController();
 $accountController = new AccountController();
 $transactionController = new TransactionController();
 $beneficiaryController = new BeneficiaryController(); 
+
 
 // MIDDLEWARE (apply globally to protected routes)
 new AuthMiddleware();
@@ -130,6 +132,13 @@ if (preg_match('#^/api/update-reset-pin/(\d+)$#', $requestUri, $matches) && $req
     return;
 }
 
+
+// BANKS LIST
+if (preg_match('#^/api/banks$#', $requestUri) && $requestMethod === 'GET') {
+    $banks = BankHelper::getBanks();
+    ResponseHelper::success($banks);
+    return;
+}
 
 
 // QUERY PARAM ROUTE (optional)

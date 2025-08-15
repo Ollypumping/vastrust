@@ -100,7 +100,7 @@ class AuthController extends AuthMiddleware
         $confirm_pin = $data['confirm_pin'] ?? null;
 
         if (!$email || !$otp || !$new_pin) {
-            return ResponseHelper::error([], 'Missing required fields');
+            return ResponseHelper::error($data, 'Missing required fields');
         }
 
         if ($new_pin !== $confirm_pin) {
