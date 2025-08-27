@@ -24,8 +24,6 @@ class AuthMiddleware
             self::check();
         }
 
-        //$this->check();
-
 
     }
 

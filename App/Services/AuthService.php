@@ -5,6 +5,7 @@ use App\Helpers\MailerHelper;
 use App\Core\Model;
 use App\Services\AccountService;
 use App\Models\User;
+use App\Models\Admin;
 use App\Helpers\ResponseHelper;
 use App\Models\Verification;
 use App\Services\VerificationService;
@@ -18,6 +19,7 @@ class AuthService
     public function __construct()
     {
         $this->user = new User();
+        $this->admin = new Admin();
         $this->accountService = new AccountService();
         $this->verificationService = new VerificationService();
     }
@@ -85,6 +87,28 @@ class AuthService
         ];
     }
 
+    public function registerAdmin($data)
+    {
+        if ($this->user->findByEmail($data['email'])) {
+            return ['success' => false, 'message' => 'Admin already exists.'];
+        }
+
+        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+
+        $userCreated = $this->admin->register([
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+            'role' => 'admin'
+        ]);
+
+        return $userCreated
+            ? ['success' => true, 'message' => 'Admin registered successfully.']
+            : ['success' => false, 'message' => 'Failed to register admin.'];
+    }
+
+
     public function login($email, $password)
     {
         $user = $this->user->findByEmail($email);
@@ -108,6 +132,42 @@ class AuthService
             ]
         ];
     }
+
+    public function uploadPassportPhoto($userId, $file)
+    {
+        if (empty($file['passport_photo']['name'])) {
+            return [
+                'success' => false,
+                'message' => 'No file uploaded.'
+            ];
+        }
+
+        $uploadDir = __DIR__ . '/../../storage/uploads/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $photoName = time() . '_' . basename($file['passport_photo']['name']);
+        $targetPath = $uploadDir . $photoName;
+
+        if (!move_uploaded_file($file['passport_photo']['tmp_name'], $targetPath)) {
+            return [
+                'success' => false,
+                'message' => 'Failed to upload photo.'
+            ];
+        }
+
+        $this->user->updatePassportPhoto($userId, $photoName);
+
+        return [
+            'success' => true,
+            'message' => 'Photo uploaded successfully.',
+            'data' => [
+                'passport_photo' => $photoName
+            ]
+        ];
+}
+
 
     public function getProfile($userId)
     {

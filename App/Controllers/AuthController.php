@@ -1,78 +1,70 @@
 <?php
+
 namespace App\Controllers;
 
-use App\Middlewares\AuthMiddleware;
+use App\Models\User;
 use App\Services\AuthService;
-use App\Validators\RegisterValidator;
+use App\Services\VerificationService;
 use App\Validators\LoginValidator;
-use App\Validators\PasswordValidator;
+use App\Validators\RegisterValidator;
 use App\Helpers\ResponseHelper;
 
-class AuthController extends AuthMiddleware
+class AuthController
 {
-    private $authService;
+    private $user;
+    private $service;
+    private $verificationService;
+    private $rvalidator;
+    private $lvalidator;
 
     public function __construct()
     {
-        parent::__construct();
-        $this->authService = new AuthService();
+        $this->user = new User();
+        $this->service = new AuthService();
+        $this->verificationService = new VerificationService();
+        $this->rvalidator = new RegisterValidator();
+        $this->lvalidator = new LoginValidator();
     }
 
-
-
-
-    public function profile($userId)
+    public function register()
     {
-        $result = $this->authService->getProfile($userId);
+        $data = $_POST;
+        $files = $_FILES;
 
-        if ($result) {
-            return ResponseHelper::success($result, "Profile retrieved successfully");
-        }
-
-        return ResponseHelper::error([], "User not found", 404);
-    }
-
-    public function changePassword($userId)
-    {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $validator = new PasswordValidator();
-        $errors = $validator->validateChange($data);
-
+        $errors = $this->rvalidator->validate($data, $files);
         if (!empty($errors)) {
-
-            $firstError = reset($errors);
-            return ResponseHelper::error([], $firstError, 422);
+            return ResponseHelper::error($errors, 'Validation failed');
         }
 
-        $result = $this->authService->changePassword($userId, $data['old_password'], $data['new_password']);
-
-        if ($result['success']) {
-            return ResponseHelper::success([], $result['message']);
+        $result = $this->service->register($data, $files);
+        if (!$result['success']) {
+            return ResponseHelper::error([], $result['message'], 400);
         }
 
-        return ResponseHelper::error([], $result['message']);
+        $this->service->sendVerificationCode($result['data']['user_id'], $result['data']['email'], 'register');
+
+        return ResponseHelper::success($result['data'], 'Registration successful. Verification email sent.', 201);
     }
 
-    public function changePin($userId)
+   public function login()
     {
         $data = json_decode(file_get_contents("php://input"), true);
-        $validator = new PasswordValidator();
-        $errors = $validator->validatePinChange($data);
+        $errors = $this->lvalidator->validate($data);
 
         if (!empty($errors)) {
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->authService->changePin($userId, $data['old_pin'], $data['new_pin']);
+        $result = $this->service->login($data['email'], $data['password']);
 
         if ($result['success']) {
-            return ResponseHelper::success([], $result['message']);
+            return ResponseHelper::success($result['data'], $result['message']);
         }
 
-        return ResponseHelper::error([], $result['message']);
+        return ResponseHelper::error([], $result['message'], 401);
     }
 
-    public function resetPin()
+    public function forgotPassword()
     {
         $data = json_decode(file_get_contents('php://input'), true);
         $email = $data['email'] ?? '';
@@ -81,7 +73,7 @@ class AuthController extends AuthMiddleware
             return ResponseHelper::error(['email' => 'Email is required'], 'Validation failed');
         }
 
-        $result = $this->authService->resetPin($email);
+        $result = $this->service->resetPassword($email);
 
         if ($result['success']) {
             return ResponseHelper::success([], $result['message']);
@@ -90,24 +82,65 @@ class AuthController extends AuthMiddleware
         }
     }
 
-    public function updatePinAfterReset()
+    public function resendCode()
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = $data['email'] ?? null;
+
+        if (!$email) {
+            return ResponseHelper::error(['email' => 'Email is required'], 'Validation failed');
+        }
+
+        // Check if user exists
+        $user = $this->user->findByEmail($email);
+        if (!$user) {
+            return ResponseHelper::error([], 'User not found', 404);
+        }
+
+        // Resend verification code
+        $response = $this->service->sendVerificationCode($user['id'], $email, 'register');
+
+        if ($response['success']) {
+            return ResponseHelper::success([], $response['message'] ?? 'Verification code resent.');
+        }
+
+        return ResponseHelper::error([], $response['message'] ?? 'Failed to resend verification code');
+    }
+
+
+    public function verifyCode()    // For registration
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = $data['email'] ?? null;
+        $code = $data['code'] ?? null;
+
+        $result = $this->verificationService->verify($email, $code);
+        if ($result['success']) {
+            return ResponseHelper::success([], $result['message']);
+        } else {
+            return ResponseHelper::error([], $result['message']);
+        }
+    }
+
+
+    public function resetPassword()
     {
         $data = json_decode(file_get_contents("php://input"), true);
 
         $email = $data['email'] ?? null;
         $otp = $data['otp'] ?? null;
-        $new_pin = $data['new_pin'] ?? null;
-        $confirm_pin = $data['confirm_pin'] ?? null;
+        $new_password = $data['new_password'] ?? null;
+        $confirm_password = $data['confirm_password'] ?? null;
 
-        if (!$email || !$otp || !$new_pin) {
-            return ResponseHelper::error($data, 'Missing required fields');
+        if (!$email || !$otp || !$new_password) {
+            return ResponseHelper::error([], 'Missing fields');
         }
 
-        if ($new_pin !== $confirm_pin) {
-            return ResponseHelper::error([], 'PINs do not match');
+        if ($new_password !== $confirm_password) {
+            return ResponseHelper::error([], 'Passwords do not match');
         }
 
-        $result = $this->authService->updatePinAfterVerification($email, $otp, $new_pin);
+        $result = $this->service->updatePasswordAfterVerification($email, $otp, $new_password);
 
         if ($result['success']) {
             return ResponseHelper::success([], $result['message']);
@@ -115,37 +148,5 @@ class AuthController extends AuthMiddleware
             return ResponseHelper::error([], $result['message']);
         }
     }
-
-    public function setupTransactionPin()
-    {
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        $email = $data['email'] ?? '';
-        $pin = $data['transaction_pin'] ?? '';
-        $confirmPin = $data['confirm_pin'] ?? '';
-
-        if (!$email || !$pin || !$confirmPin) {
-            return ResponseHelper::error([], 'All fields are required', 422);
-        }
-
-        if (!preg_match('/^\d{4}$/', $pin)) {
-            return ResponseHelper::error('Transaction PIN must be a 4-digit number.');
-        }
-
-        if ($pin !== $confirmPin) {
-            return ResponseHelper::error([], 'PINs do not match', 422);
-        }
-
-        $result = $this->authService->setupTransactionPin($email, $pin);
-
-        if ($result['success']) {
-            return ResponseHelper::success([], $result['message']);
-        }
-
-        return ResponseHelper::error([], $result['message'], 400);
-    }
-
-
-
 
 }

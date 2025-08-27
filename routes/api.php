@@ -1,7 +1,9 @@
 <?php
 
+use App\Controllers\ProfileController;
 use App\Controllers\AuthController;
-use App\Controllers\RegController;
+use App\Controllers\AdminController;
+use App\Controllers\AdminAuthController;
 use App\Controllers\AccountController;
 use App\Controllers\TransactionController;
 use App\Controllers\BeneficiaryController;
@@ -14,41 +16,51 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 $routeKey = "$requestMethod $requestUri";
 
 // PUBLIC ROUTES
-$regController = new RegController();
+$authController = new AuthController();
+$adminAuthController = new AdminAuthController();
 
 switch ($routeKey) {
     case 'POST /api/register':
-        $regController->register();
+        $authController->register();
         return;
 
-    case 'POST /api/reset-password':
-        $regController->resetPassword();
+    case 'POST /api/forgot-password':
+        $authController->forgotPassword();
         return;
 
     case 'POST /api/login':
-        $regController->login();
+        $authController->login();
         return;
 
     case 'POST /api/register-verify':
-        $regController->verifyCode();
+        $authController->verifyCode();
         return;
         
         
 
     case 'POST /api/resend-code':
-        $regController->resendCode();
+        $authController->resendCode();
         return;
 
-    case 'POST /api/update-reset-password':
-        $regController->updatePasswordAfterReset();
+    case 'POST /api/reset-password':
+        $authController->resetPassword();
+        return;
+
+    case 'POST /api/admin/login':
+        $adminAuthController->login();
+        return;
+
+    case 'POST /api/admin/register':
+        $adminAuthController->register();
         return;
 }
 
 // PROTECTED CONTROLLERS
-$authController = new AuthController();
+$profileController = new ProfileController();
 $accountController = new AccountController();
 $transactionController = new TransactionController();
 $beneficiaryController = new BeneficiaryController(); 
+
 
 
 // MIDDLEWARE (apply globally to protected routes)
@@ -57,17 +69,24 @@ new AuthMiddleware();
 // PROTECTED ROUTES WITH user_id IN URL
 
 if (preg_match('#^/api/profile/(\d+)$#', $requestUri, $matches) && $requestMethod === 'GET') {
-    $authController->profile($matches[1]);
+    $profileController->profile($matches[1]);
     return;
 }
 
+if (preg_match('#^/api/upload-passport/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $req = (object)[ 'params' => ['userId' => $matches[1]] ];
+    $profileController->uploadPassportPhoto($req, $res = null);
+    return;
+}
+
+
 if (preg_match('#^/api/change-password/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
-    $authController->changePassword($matches[1]);
+    $profileController->changePassword($matches[1]);
     return;
 }
 
 if (preg_match('#^/api/setup-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
-    $authController->setupTransactionPin($matches[1]);
+    $profileController->setupTransactionPin($matches[1]);
     return;
 }
 
@@ -118,17 +137,17 @@ if (preg_match('#^/api/balance/(\d+)$#', $requestUri, $matches) && $requestMetho
 }
 
 if (preg_match('#^/api/change-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
-    $authController->changePin($matches[1]);
+    $profileController->changePin($matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/forgot-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $profileController->forgotPin();
     return;
 }
 
 if (preg_match('#^/api/reset-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
-    $authController->resetPin();
-    return;
-}
-
-if (preg_match('#^/api/update-reset-pin/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
-    $authController->updatePinAfterReset();
+    $profileController->resetPin();
     return;
 }
 
@@ -141,12 +160,60 @@ if (preg_match('#^/api/banks$#', $requestUri) && $requestMethod === 'GET') {
 }
 
 
-// QUERY PARAM ROUTE (optional)
-// if ($routeKey === 'GET /api/balance') {
-//     $accountNumber = $_GET['account_number'] ?? '';
-//     $accountController->getBalance($accountNumber);
-//     return;
-// }
+
+// ADMIN ROUTES
+
+if (preg_match('#^/api/admin/(\d+)/users$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->getAllUsers();
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/accounts$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->getUserAccounts($matches[1], $matches[2]);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/deactivate$#', $requestUri, $matches) && $requestMethod === 'PATCH') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->deactivateUser($matches[2], $matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/activate$#', $requestUri, $matches) && $requestMethod === 'PATCH') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->activateUser($matches[2], $matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/update$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+    $adminController = new AdminController($matches[1]);
+    $data = json_decode(file_get_contents('php://input'), true);
+    $adminController->updateUser($matches[2], $matches[1], $data);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/transactions$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->getAllTransactions($matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/change-password$#', $requestUri, $matches) && $requestMethod === 'PATCH') {
+    $adminController = new AdminController($matches[1]);
+    $data = json_decode(file_get_contents('php://input'), true);
+    $adminController->changeUserPassword($matches[2], $matches[1], $data['new_password']);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/change-pin$#', $requestUri, $matches) && $requestMethod === 'PATCH') {
+    $adminController = new AdminController($matches[1]);
+    $data = json_decode(file_get_contents('php://input'), true);
+    $adminController->changeUserPin($matches[2], $matches[1], $data['new_pin']);
+    return;
+}
+
 
 // DEFAULT
 ResponseHelper::error([], 'Route not found', 404);

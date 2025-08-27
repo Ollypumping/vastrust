@@ -6,19 +6,26 @@ use App\Helpers\ResponseHelper;
 
 class RoleMiddleware
 {
-    public static function checkAdmin()
+    protected $user;
+
+    public function __construct($userId)
     {
-        if (!isset($_SESSION['user_id'])) {
-            ResponseHelper::error([], 'Unauthorized. Please log in.', 401);
-            exit;
-        }
-
         $userModel = new User();
-        $user = $userModel->findById($_SESSION['user_id']);
+        $this->user = $userModel->findById($userId);
 
-        if (!$user || ($user['role'] ?? '') !== 'admin') {
-            ResponseHelper::error([], 'Access denied. Admin only.', 403);
+        if (!$this->user) {
+            ResponseHelper::error([], "User not found", 404);
             exit;
         }
+
+        if ($this->user['role'] !== 'admin') {
+            ResponseHelper::error([], "Unauthorized: Admin access required", 403);
+            exit;
+        }
+    }
+
+    public function getUser()
+    {
+        return $this->user;
     }
 }

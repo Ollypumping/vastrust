@@ -21,6 +21,13 @@ class User extends Model {
         return $this->execute($sql, $data);
     }
 
+    public function updatePassportPhoto($userId, $photoName)
+    {
+        $stmt = $this->conn->prepare("UPDATE users SET passport_photo = ? WHERE id = ?");
+        return $stmt->execute([$photoName, $userId]);
+    }
+
+
     public function findByEmail($email) {
         $sql = "SELECT * FROM users WHERE email = :email";
         return $this->query($sql, ['email' => $email], true);
@@ -30,7 +37,7 @@ class User extends Model {
          $sql = "
             SELECT 
                 u.id, u.email, u.first_name, u.last_name, 
-                u.account_number, a.balance
+                u.account_number, a.balance, u.role
             FROM users u
             LEFT JOIN accounts a ON u.id = a.user_id
             WHERE u.id = :id
@@ -39,6 +46,7 @@ class User extends Model {
         return $this->query($sql, ['id' => $id], true);
 
     }
+
 
     public function getLastInsertId(){
         return $this->conn->lastInsertId();  // PDO built-in

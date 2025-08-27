@@ -39,8 +39,11 @@ require_once __DIR__ . '/../autoload.php';
 
 require_once '../app/helpers/ResponseHelper.php';
 
-require_once '../app/controllers/AuthController.php';
+require_once '../app/controllers/ProfileController.php';
 require_once '../app/controllers/AccountController.php';
+require_once '../app/controllers/AuthController.php';
+require_once '../app/controllers/AdminController.php';
+require_once '../app/controllers/AdminAuthController.php';
 require_once '../app/controllers/TransactionController.php';
 require_once '../app/services/AuthService.php';
 
