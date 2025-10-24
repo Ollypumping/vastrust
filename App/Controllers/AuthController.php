@@ -29,8 +29,7 @@ class AuthController
     public function register()
     {
         $data = $_POST;
-        $files = $_FILES;
-
+        $files = $_FILES ?? [];
         $errors = $this->rvalidator->validate($data, $files);
         if (!empty($errors)) {
             return ResponseHelper::error($errors, 'Validation failed');

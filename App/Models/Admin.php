@@ -14,8 +14,34 @@ class Admin extends Model
     
     public function getAllUsers()
     {
-        $sql = "SELECT * FROM users WHERE role = 'user'";
+        $sql = "SELECT 
+                id, 
+                CONCAT(first_name, ' ', last_name) AS full_name, 
+                email, 
+                status, 
+                created_at 
+            FROM users 
+            WHERE role = 'user'
+            ORDER BY created_at DESC
+        ";
+
         return $this->query($sql);
+    }
+
+    public function getUserById($userId)
+    {
+        $sql = "SELECT 
+                 
+                CONCAT(first_name, ' ', last_name) AS full_name, 
+                email, phone_number, account_number, first_name, last_name, dob, address, bvn,
+                status, role
+                created_at 
+            FROM users 
+            WHERE id = ? AND role = 'user'
+        ";
+
+        $result = $this->query($sql, [$userId]);
+        return $result ? $result[0] : null;
     }
 
     public function getUserAccounts($userId)
@@ -58,8 +84,36 @@ class Admin extends Model
 
     public function getAllTransactions()
     {
-        $sql = "SELECT * FROM transactions ORDER BY created_at DESC";
+
+       $sql = "
+            SELECT t.*,
+                CONCAT(sender.first_name, ' ', sender.last_name) AS sender_name,
+                CONCAT(receiver.first_name, ' ', receiver.last_name) AS receiver_name
+            FROM transactions t
+            LEFT JOIN accounts sa ON t.sender_account = sa.account_number
+            LEFT JOIN users sender ON sa.user_id = sender.id
+            LEFT JOIN accounts ra ON t.receiver_account = ra.account_number
+            LEFT JOIN users receiver ON ra.user_id = receiver.id
+            ORDER BY t.created_at DESC
+        ";
         return $this->query($sql);
+    }
+
+    public function getUserTransactions($userId)
+    {
+        $sql = "
+            SELECT t.*, 
+                CONCAT(sender.first_name, ' ', sender.last_name) AS sender_name,
+                CONCAT(receiver.first_name, ' ', receiver.last_name) AS receiver_name
+            FROM transactions t
+            LEFT JOIN accounts sa ON t.sender_account = sa.account_number
+            LEFT JOIN users sender ON sa.user_id = sender.id
+            LEFT JOIN accounts ra ON t.receiver_account = ra.account_number
+            LEFT JOIN users receiver ON ra.user_id = receiver.id
+            WHERE sender.id = ? OR receiver.id = ?
+            ORDER BY t.created_at DESC
+        ";
+        return $this->query($sql, [$userId, $userId]);
     }
 
     public function changeUserPassword($userId, $hashedPassword)

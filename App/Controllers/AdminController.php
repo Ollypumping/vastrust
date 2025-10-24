@@ -21,6 +21,14 @@ class AdminController extends RoleMiddleware
         return ResponseHelper::success($users);
     }
 
+    public function getUserById($userId){
+        $user = $this->adminModel->getUserById($userId);
+        if (!$user) {
+            return ResponseHelper::error([], "User not found", 404);
+        }
+        return ResponseHelper::success($user);
+    }
+
     public function getUserAccounts($userId)
     {
         $accounts = $this->adminModel->getUserAccounts($userId);
@@ -45,11 +53,19 @@ class AdminController extends RoleMiddleware
         return ResponseHelper::success([], "User details updated.");
     }
 
+
     public function getAllTransactions()
     {
         $transactions = $this->adminModel->getAllTransactions();
         return ResponseHelper::success($transactions);
     }
+
+    public function getUserTransactions($userId)
+    {
+        $tx = $this->adminModel->getUserTransactions($userId);
+        return ResponseHelper::success($tx);
+    }
+
 
     public function changeUserPassword($userId, $newPassword)
     {

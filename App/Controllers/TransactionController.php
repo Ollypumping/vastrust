@@ -44,7 +44,7 @@ class TransactionController extends AuthMiddleware
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->service->transfer($userId, $data['from_account'], $data['to_account'], $data['amount'], $data['pin'], $data['external_bank'] ?? null);
+        $result = $this->service->transfer($userId, $data['from_account'], $data['to_account'], $data['amount'], $data['pin'], $data['external_bank'] ?? null, $data['description'] ?? '');
 
         return $result['success']
             ? ResponseHelper::success([], $result['message'])
@@ -57,7 +57,7 @@ class TransactionController extends AuthMiddleware
         return ResponseHelper::success($result, 'Transaction history fetched');
     }
 
-    public function deposit()
+    public function deposit($userId)
     {
         $data = json_decode(file_get_contents("php://input"), true);
         $validator = new TransactionValidator();
@@ -67,7 +67,7 @@ class TransactionController extends AuthMiddleware
             return ResponseHelper::error($errors, "Validation failed", 422);
         }
 
-        $result = $this->service->deposit($data['account_number'], $data['amount']);
+        $result = $this->service->deposit($userId, $data['account_number'], $data['amount']);
 
         return $result['success']
             ? ResponseHelper::success([], $result['message'])

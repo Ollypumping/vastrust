@@ -15,6 +15,7 @@ class AuthMiddleware
         $publicRoutes = [
             '/api/register',
             '/api/reset-password'
+            
         ];
 
         $uri = $_SERVER['REQUEST_URI'];

@@ -31,4 +31,13 @@ class Beneficiary extends Model
         ]);
 
     }
+
+    public function findByUserAndAccount($userId, $accountNumber)
+    {
+        $sql = "SELECT * FROM beneficiaries WHERE user_id = :user_id AND account_number = :account_number";
+        return $this->query($sql, [
+            'user_id' => $userId,
+            'account_number' => $accountNumber
+        ]);
+    }
 }

@@ -105,6 +105,18 @@ if (preg_match('#^/api/beneficiaries/(\d+)$#', $requestUri, $matches) && $reques
     return;
 }
 
+if (preg_match('#^/api/beneficiaries/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $beneficiaryController->add($matches[1], $data);
+    return;
+}
+
+if (preg_match('#^/api/beneficiaries/(\d+)/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $beneficiaryController->update($matches[1], $matches[2], $data);
+    return;
+}
+
 if (preg_match('#^/api/deposit/(\d+)$#', $requestUri, $matches) && $requestMethod === 'POST') {
     $transactionController->deposit($matches[1]);
     return;
@@ -169,9 +181,15 @@ if (preg_match('#^/api/admin/(\d+)/users$#', $requestUri, $matches) && $requestM
     return;
 }
 
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->getUserById($matches[2]);
+    return;
+}
+
 if (preg_match('#^/api/admin/(\d+)/users/(\d+)/accounts$#', $requestUri, $matches) && $requestMethod === 'GET') {
     $adminController = new AdminController($matches[1]);
-    $adminController->getUserAccounts($matches[1], $matches[2]);
+    $adminController->getUserAccounts($matches[2], $matches[1]);
     return;
 }
 
@@ -188,15 +206,22 @@ if (preg_match('#^/api/admin/(\d+)/users/(\d+)/activate$#', $requestUri, $matche
 }
 
 if (preg_match('#^/api/admin/(\d+)/users/(\d+)/update$#', $requestUri, $matches) && $requestMethod === 'PUT') {
-    $adminController = new AdminController($matches[1]);
+    $adminController = new AdminController($matches[1]); // sets adminId internally
     $data = json_decode(file_get_contents('php://input'), true);
-    $adminController->updateUser($matches[2], $matches[1], $data);
+    $adminController->updateUser($matches[2], $data); // ✅ only pass userId and data
     return;
 }
+
 
 if (preg_match('#^/api/admin/(\d+)/transactions$#', $requestUri, $matches) && $requestMethod === 'GET') {
     $adminController = new AdminController($matches[1]);
     $adminController->getAllTransactions($matches[1]);
+    return;
+}
+
+if (preg_match('#^/api/admin/(\d+)/users/(\d+)/transactions$#', $requestUri, $matches) && $requestMethod === 'GET') {
+    $adminController = new AdminController($matches[1]);
+    $adminController->getUserTransactions($matches[2]);
     return;
 }
 

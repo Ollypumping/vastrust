@@ -128,7 +128,8 @@ class AuthService
             'data' => [
                 'user_id' => $user['id'],
                 'email' => $user['email'],
-                'full_name' => $user['first_name'] . ' ' . $user['last_name']
+                'full_name' => $user['first_name'] . ' ' . $user['last_name'],
+                'role'      => $user['role']
             ]
         ];
     }

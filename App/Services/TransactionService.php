@@ -60,7 +60,7 @@ class TransactionService
         return ['success' => true, 'message' => 'Withdrawal successful.'];
     }
 
-    public function transfer($userId, $from, $to, $amount, $pin, $externalBank = null)
+    public function transfer($userId, $from, $to, $amount, $pin, $externalBank = null, $description = null)
     {
         $user = $this->user->fetchDetails($userId);
         //var_dump($user); exit;
@@ -126,15 +126,21 @@ class TransactionService
         if (!$toAccount && $externalBank) {
             $this->transaction->log([
                 'sender_account' => $from,
-                'receiver_account' => null,
+                'receiver_account' => $to,
                 'type' => 'transfer',
                 'amount' => $amount,
-                'description' => 'Interbank transfer to ' . $externalBank,
+                'description' => $description ?? ('Interbank transfer to ' . $externalBank),
                 'status' => 'success',
                 'external_bank' => $externalBank
             ]);
 
-            return ['success' => true, 'message' => 'Interbank transfer initiated.'];
+            return ['success' => true, 'message' => 'Interbank transfer initiated.',
+            'data' => [
+                'sender_name' => $user['first_name'] . ' ' . $user['last_name'],
+                'amount' => $amount,
+                'sender_account' => $from,
+                'receiver_account' => $to
+            ]];
         }
 
         // Intra-bank: credit recipient
@@ -146,26 +152,36 @@ class TransactionService
             'receiver_account' => $to,
             'type' => 'transfer',
             'amount' => $amount,
-            'description' => 'Intra-bank transfer',
+            'description' => $description ?? 'Intra-bank transfer',
             'status' => 'success',
             'external_bank' => null
         ]);
 
         // ✅ Send credit alert to receiver
-        MailerHelper::sendCreditAlertNotification(
-            $toAccount['email'],
-            $toAccount['first_name'] . ' ' . $toAccount['last_name'],
-            $amount,
-            $user['first_name'] . ' ' . $user['last_name'],
-            $newReceiverBalance
-        );
+        // MailerHelper::sendCreditAlertNotification(
+        //     $toAccount['email'],
+        //     $toAccount['first_name'] . ' ' . $toAccount['last_name'],
+        //     $amount,
+        //     $user['first_name'] . ' ' . $user['last_name'],
+        //     $newReceiverBalance
+        // );
 
-        return ['success' => true, 'message' => 'Intra-bank transfer completed.'];
+        return ['success' => true, 'message' => 'Intra-bank transfer completed.',
+            'data' => [
+                'sender_name' => $user['first_name'] . ' ' . $user['last_name'],
+                'receiver_name' => $toAccount['first_name'] . ' ' . $toAccount['last_name'],
+                'amount' => $amount,
+                'receiver_balance' => $newReceiverBalance,
+                'sender_account' => $from,
+                'receiver_account' => $to
+
+            ]];
 
     }
 
-    public function deposit($accountNumber, $amount)
+    public function deposit($userId, $accountNumber, $amount)
     {
+        
         $user = $this->user->findById($userId);
         $account = $this->account->getByAccountNumber($accountNumber);
         if (!$account) {
@@ -181,7 +197,8 @@ class TransactionService
             'type' => 'deposit',
             'amount' => $amount,
             'description' => 'Deposit',
-            'status' => 'success'
+            'status' => 'success',
+            'external_bank' => null
         ]);
 
         MailerHelper::sendDepositNotification(
